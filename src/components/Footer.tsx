@@ -1,6 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
 import { site } from "@/lib/site.config";
+import { asset } from "@/lib/asset";
 import { categories } from "@/lib/products";
 import { PhoneIcon, PinIcon, ClockIcon } from "./icons";
 
@@ -9,7 +9,8 @@ export function Footer() {
     <footer className="mt-20 border-t border-border bg-foreground text-white/80">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-4">
-          <Image src="/logo.svg" alt={site.fullName} width={220} height={60} unoptimized className="h-11 w-auto brightness-0 invert" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={asset("/logo.svg")} alt={site.fullName} width={220} height={60} className="h-11 w-auto brightness-0 invert" />
           <p className="max-w-xs text-sm leading-relaxed text-white/60">{site.description}</p>
         </div>
 

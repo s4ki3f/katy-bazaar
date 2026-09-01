@@ -5,6 +5,7 @@ import { CartProvider } from "@/context/CartContext";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { site } from "@/lib/site.config";
+import { asset } from "@/lib/asset";
 
 const rubik = Rubik({
   subsets: ["latin"],
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
     template: `%s · ${site.name}`,
   },
   description: site.description,
-  icons: { icon: "/mark.svg" },
+  icons: { icon: asset("/mark.svg") },
   openGraph: {
     title: site.fullName,
     description: site.description,

@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { categories } from "@/lib/products";
 import { site } from "@/lib/site.config";
+import { asset } from "@/lib/asset";
 import { CartIcon, MenuIcon, CloseIcon, PhoneIcon } from "./icons";
 
 const NAV = [
@@ -32,7 +32,8 @@ export function Header() {
 
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link href="/" className="flex shrink-0 items-center" aria-label={site.fullName}>
-          <Image src="/logo.svg" alt={site.fullName} width={220} height={60} priority unoptimized className="h-11 w-auto" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={asset("/logo.svg")} alt={site.fullName} width={220} height={60} className="h-11 w-auto" />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
