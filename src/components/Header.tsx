@@ -26,7 +26,7 @@ export function Header() {
       {/* announcement bar */}
       <div className="bg-primary text-on-primary">
         <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-1.5 text-center text-xs font-semibold">
-          <span>Free local delivery on orders over {site.currency}{site.freeDeliveryThreshold} · 100% Zabihah Halal</span>
+          <span>Order ahead for fast in-store pickup · 100% Zabihah Halal</span>
         </div>
       </div>
 

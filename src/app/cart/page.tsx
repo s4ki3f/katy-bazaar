@@ -29,10 +29,8 @@ export default function CartPage() {
     );
   }
 
-  const remaining = Math.max(0, site.freeDeliveryThreshold - subtotal);
-  const shipping = subtotal >= site.freeDeliveryThreshold ? 0 : site.deliveryFee;
   const tax = subtotal * site.taxRate;
-  const total = subtotal + shipping + tax;
+  const total = subtotal + tax;
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-10">
@@ -83,20 +81,13 @@ export default function CartPage() {
           <div className="rounded-card border border-border bg-surface p-6 shadow-soft">
             <h2 className="font-display text-lg font-bold">Order Summary</h2>
 
-            {remaining > 0 ? (
-              <div className="mt-4 rounded-lg bg-muted p-3 text-sm">
-                Add <span className="font-bold text-primary">{money(remaining)}</span> more for free delivery.
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-border">
-                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(100, (subtotal / site.freeDeliveryThreshold) * 100)}%` }} />
-                </div>
-              </div>
-            ) : (
-              <div className="mt-4 rounded-lg bg-primary/10 p-3 text-sm font-semibold text-primary">🎉 You&apos;ve unlocked free delivery!</div>
-            )}
+            <div className="mt-4 rounded-lg bg-primary/10 p-3 text-sm font-semibold text-primary">
+              Free in-store pickup — ready within the hour.
+            </div>
 
             <dl className="mt-4 space-y-2.5 text-sm">
               <div className="flex justify-between"><dt className="text-muted-foreground">Subtotal</dt><dd className="font-semibold">{money(subtotal)}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">Delivery</dt><dd className="font-semibold">{shipping === 0 ? "Free" : money(shipping)}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">Pickup</dt><dd className="font-semibold">Free</dd></div>
               <div className="flex justify-between"><dt className="text-muted-foreground">Est. tax</dt><dd className="font-semibold">{money(tax)}</dd></div>
               <div className="flex justify-between border-t border-border pt-3 text-base"><dt className="font-display font-bold">Total</dt><dd className="font-display font-bold">{money(total)}</dd></div>
             </dl>
@@ -104,7 +95,7 @@ export default function CartPage() {
             <Link href="/checkout" className="mt-5 flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 font-semibold text-on-primary transition-colors hover:bg-primary-dark">
               Checkout <ArrowIcon width={18} height={18} />
             </Link>
-            <p className="mt-3 text-center text-xs text-muted-foreground">Secure checkout · Cash, card & pickup available</p>
+            <p className="mt-3 text-center text-xs text-muted-foreground">Secure checkout · Pay in cash or card at pickup</p>
           </div>
         </aside>
       </div>

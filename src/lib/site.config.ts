@@ -36,8 +36,6 @@ export const site = {
 
   // Storefront settings
   currency: "$",
-  freeDeliveryThreshold: 60,
-  deliveryFee: 5.99,
   taxRate: 0.0825, // 8.25% (Katy, TX placeholder)
 } as const;
 
@@ -53,9 +51,9 @@ export const valueProps = [
     icon: "knife",
   },
   {
-    title: "Local Delivery",
-    body: `Free delivery across Katy on orders over ${"$"}60.`,
-    icon: "truck",
+    title: "Order & Collect",
+    body: "Order ahead online and pick up fresh in-store — usually ready within the hour.",
+    icon: "clock",
   },
   {
     title: "Groceries You Trust",

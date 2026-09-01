@@ -33,7 +33,7 @@ export default function HomePage() {
             <HeroSearch />
 
             <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-white/80">
-              {["Cut fresh daily", "Free delivery over $" + site.freeDeliveryThreshold, "Trusted since day one"].map((t) => (
+              {["Cut fresh daily", "Order ahead for pickup", "Trusted since day one"].map((t) => (
                 <span key={t} className="inline-flex items-center gap-1.5">
                   <CheckIcon width={16} height={16} className="text-accent" /> {t}
                 </span>
@@ -154,7 +154,7 @@ export default function HomePage() {
           <div className="mt-8 grid gap-5 md:grid-cols-3">
             {[
               { n: "Ayesha R.", t: "The only place I trust for halal meat in Katy. The goat curry cuts are always fresh and cleaned perfectly." },
-              { n: "Imran S.", t: "Basmati, spices, frozen parathas — I get my whole month's groceries here and delivery is fast." },
+              { n: "Imran S.", t: "Basmati, spices, frozen parathas — I order ahead online and my whole month's groceries are bagged and ready when I arrive." },
               { n: "Fatima K.", t: "They ground the beef fresh while I shopped and even cut it exactly how I wanted. Wonderful service." },
             ].map((r) => (
               <Reveal key={r.n}>
@@ -174,7 +174,7 @@ export default function HomePage() {
         <div className="overflow-hidden rounded-card bg-gradient-to-br from-primary to-primary-dark px-8 py-14 text-center text-white shadow-lift sm:px-16">
           <h2 className="font-display text-3xl font-bold sm:text-4xl">Ready to fill your cart?</h2>
           <p className="mx-auto mt-3 max-w-lg text-white/85">
-            Browse the full bazaar and get free local delivery on orders over {site.currency}{site.freeDeliveryThreshold}.
+            Browse the full bazaar, order ahead, and pick up fresh in-store.
           </p>
           <Link href="/shop" className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 font-semibold text-primary transition-transform hover:scale-[1.03]">
             Start shopping <ArrowIcon width={18} height={18} />

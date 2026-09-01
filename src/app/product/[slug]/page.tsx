@@ -7,7 +7,7 @@ import { ProductImage } from "@/components/ProductImage";
 import { ProductCard } from "@/components/ProductCard";
 import { AddToCart } from "@/components/AddToCart";
 import { Stars } from "@/components/Stars";
-import { CheckIcon, ShieldIcon, TruckIcon, ArrowIcon } from "@/components/icons";
+import { CheckIcon, ShieldIcon, ClockIcon, ArrowIcon } from "@/components/icons";
 
 export function generateStaticParams() {
   return products.map((p) => ({ slug: p.slug }));
@@ -77,7 +77,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             {[
               { icon: ShieldIcon, t: "100% Zabihah halal certified" },
               { icon: CheckIcon, t: "Cut & packed fresh daily" },
-              { icon: TruckIcon, t: "Free local delivery over $60" },
+              { icon: ClockIcon, t: "Order ahead for in-store pickup" },
               { icon: CheckIcon, t: "Custom cuts at no extra cost" },
             ].map(({ icon: Icon, t }) => (
               <li key={t} className="flex items-center gap-2.5 text-sm text-foreground/80">

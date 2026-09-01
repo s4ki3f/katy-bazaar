@@ -71,4 +71,5 @@ export const ICON_MAP = {
   knife: KnifeIcon,
   truck: TruckIcon,
   basket: BasketIcon,
+  clock: ClockIcon,
 } as const;
