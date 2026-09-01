@@ -1,0 +1,17 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Katy Bazaar mark">
+  <rect x="10" y="10" width="100" height="100" rx="26" fill="#059669"/>
+  <rect x="10" y="10" width="100" height="100" rx="26" fill="url(#g)" fill-opacity="0.35"/>
+  <path d="M78 34a26 26 0 1 0 0 52 22 22 0 1 1 0-52z" fill="#ffffff"/>
+  <path d="M88 40l2.4 5 5.5.8-4 3.9.95 5.5L88 58l-4.9 2.6.95-5.5-4-3.9 5.5-.8z" fill="#D97706"/>
+  <g fill="#ffffff" fill-opacity="0.92">
+    <path d="M34 86h9l-2 10h-9z"/>
+    <path d="M49 86h9l-1 10h-9z" fill="#D97706" fill-opacity="0.95"/>
+    <path d="M64 86h9l1 10h-9z"/>
+  </g>
+  <defs>
+    <linearGradient id="g" x1="10" y1="10" x2="110" y2="110" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#10B981"/>
+      <stop offset="1" stop-color="#047857"/>
+    </linearGradient>
+  </defs>
+</svg>

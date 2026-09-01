@@ -1,0 +1,27 @@
+<svg width="440" height="120" viewBox="0 0 440 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Katy Bazaar and Halal Meat">
+  <!-- Emblem -->
+  <g>
+    <!-- Badge -->
+    <rect x="6" y="10" width="100" height="100" rx="26" fill="#059669"/>
+    <rect x="6" y="10" width="100" height="100" rx="26" fill="url(#kbGrad)" fill-opacity="0.35"/>
+    <!-- Crescent (halal signifier) -->
+    <path d="M74 34a26 26 0 1 0 0 52 22 22 0 1 1 0-52z" fill="#ffffff"/>
+    <!-- Amber star -->
+    <path d="M84 40l2.4 5 5.5.8-4 3.9.95 5.5L84 58l-4.9 2.6.95-5.5-4-3.9 5.5-.8z" fill="#D97706"/>
+    <!-- Storefront awning stripes at base -->
+    <g fill="#ffffff" fill-opacity="0.92">
+      <path d="M30 84h9l-2 10h-9z"/>
+      <path d="M45 84h9l-1 10h-9z" fill="#D97706" fill-opacity="0.95"/>
+      <path d="M60 84h9l1 10h-9z"/>
+    </g>
+  </g>
+  <!-- Wordmark -->
+  <text x="124" y="56" font-family="Rubik, system-ui, sans-serif" font-size="34" font-weight="700" fill="#0F172A" letter-spacing="-0.5">Katy Bazaar</text>
+  <text x="125" y="86" font-family="'Nunito Sans', system-ui, sans-serif" font-size="17" font-weight="700" fill="#059669" letter-spacing="4">&amp; HALAL MEAT</text>
+  <defs>
+    <linearGradient id="kbGrad" x1="6" y1="10" x2="106" y2="110" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#10B981"/>
+      <stop offset="1" stop-color="#047857"/>
+    </linearGradient>
+  </defs>
+</svg>
