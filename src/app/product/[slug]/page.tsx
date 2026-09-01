@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProduct, getCategory, products, productsByCategory } from "@/lib/products";
 import { money } from "@/lib/format";
-import { ProductThumb } from "@/components/ProductThumb";
+import { ProductImage } from "@/components/ProductImage";
 import { ProductCard } from "@/components/ProductCard";
 import { AddToCart } from "@/components/AddToCart";
 import { Stars } from "@/components/Stars";
@@ -42,7 +42,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <div className="grid gap-10 lg:grid-cols-2">
         {/* image */}
         <div className="relative overflow-hidden rounded-card border border-border shadow-soft">
-          <ProductThumb name={product.name} category={product.category} className="aspect-square w-full" />
+          <ProductImage slug={product.slug} name={product.name} category={product.category} className="aspect-square w-full" />
           <div className="absolute left-4 top-4 flex gap-2">
             {product.badge && <span className="rounded-full bg-white/95 px-3 py-1 text-sm font-bold text-primary">{product.badge}</span>}
             {product.halal && <span className="rounded-full bg-primary px-3 py-1 text-sm font-bold text-white">Zabihah Halal</span>}

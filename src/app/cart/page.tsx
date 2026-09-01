@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { site } from "@/lib/site.config";
 import { money } from "@/lib/format";
-import { ProductThumb } from "@/components/ProductThumb";
+import { ProductImage } from "@/components/ProductImage";
 import { MinusIcon, PlusIcon, TrashIcon, ArrowIcon, CartIcon } from "@/components/icons";
 
 export default function CartPage() {
@@ -45,7 +45,7 @@ export default function CartPage() {
           {lines.map(({ product, qty, lineTotal }) => (
             <div key={product.id} className="flex gap-4 p-4">
               <Link href={`/product/${product.slug}`} className="shrink-0">
-                <ProductThumb name={product.name} category={product.category} className="h-24 w-24 overflow-hidden rounded-lg" />
+                <ProductImage slug={product.slug} name={product.name} category={product.category} className="h-24 w-24 overflow-hidden rounded-lg" />
               </Link>
               <div className="flex flex-1 flex-col">
                 <div className="flex justify-between gap-3">

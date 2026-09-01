@@ -2,7 +2,7 @@ import Link from "next/link";
 import { site, valueProps } from "@/lib/site.config";
 import { categories, products } from "@/lib/products";
 import { ProductCard } from "@/components/ProductCard";
-import { ProductThumb } from "@/components/ProductThumb";
+import { ProductImage } from "@/components/ProductImage";
 import { Reveal } from "@/components/Reveal";
 import { Stars } from "@/components/Stars";
 import { HeroSearch } from "@/components/HeroSearch";
@@ -205,7 +205,7 @@ function SectionHead({ eyebrow, title, href, cta }: { eyebrow: string; title: st
 function ProductCardMini({ slug, name, category, price }: { slug: string; name: string; category: string; price: number }) {
   return (
     <Link href={`/product/${slug}`} className="block">
-      <ProductThumb name={name} category={category} className="aspect-[4/3] w-full overflow-hidden rounded-lg" />
+      <ProductImage slug={slug} name={name} category={category} className="aspect-[4/3] w-full overflow-hidden rounded-lg" />
       <div className="px-1 pt-2.5">
         <p className="truncate font-display text-sm font-semibold text-foreground">{name}</p>
         <p className="text-sm font-bold text-primary">{site.currency}{price.toFixed(2)}</p>

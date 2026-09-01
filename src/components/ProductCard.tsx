@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Product } from "@/lib/products";
 import { money } from "@/lib/format";
-import { ProductThumb } from "./ProductThumb";
+import { ProductImage } from "./ProductImage";
 import { Stars } from "./Stars";
 import { QuickAdd } from "./QuickAdd";
 
@@ -16,7 +16,8 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <article className="group flex flex-col overflow-hidden rounded-card border border-border bg-surface shadow-soft transition-shadow duration-200 hover:shadow-lift">
       <Link href={`/product/${product.slug}`} className="relative block aspect-[4/3] overflow-hidden">
-        <ProductThumb
+        <ProductImage
+          slug={product.slug}
           name={product.name}
           category={product.category}
           className="h-full w-full transition-transform duration-300 group-hover:scale-105"
