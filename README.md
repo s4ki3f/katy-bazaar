@@ -13,10 +13,10 @@ Built with **Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v
   Category is reflected in the URL (`/shop?category=halal-meat`) so it's shareable.
 - **Product pages** (`/product/[slug]`) — statically generated for every product,
   with quantity selector, badges, related items, and SEO metadata.
-- **Cart** (`/cart`) — persisted in `localStorage`, quantity editing, free-delivery
-  progress bar, tax/delivery totals.
-- **Checkout** (`/checkout`) — delivery vs. pickup, cash vs. card, order confirmation.
-  _Demo only — no real payment is processed._
+- **Cart** (`/cart`) — persisted in `localStorage`, quantity editing, tax total,
+  free in-store pickup.
+- **Checkout** (`/checkout`) — in-store pickup only (pickup location + preferred
+  time), cash or card, order confirmation. _Demo only — no real payment is processed._
 - **About** & **Contact** pages.
 - Fully responsive, keyboard-accessible, honors `prefers-reduced-motion`.
 
@@ -35,7 +35,7 @@ Business details are **placeholders** pending the real info from the Facebook pa
 Edit them in one place:
 
 - `src/lib/site.config.ts` — name, **address, phone, email, hours, socials**,
-  delivery threshold, tax rate.
+  tax rate.
 - `src/lib/products.ts` — the mock product catalog and categories.
 
 ## Product images
