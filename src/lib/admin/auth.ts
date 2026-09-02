@@ -38,20 +38,16 @@ export type Role = "admin" | "staff";
 /**
  * DEVELOPMENT-ONLY sign-in.
  *
- * These let the team click through the counter app without standing up an
- * auth server. They are deliberately fenced behind NODE_ENV !== production:
- * a `next build` compiles the branch out, so a shipped bundle contains no
- * usable credentials and still refuses to let anyone in without a real
- * NEXT_PUBLIC_ADMIN_AUTH_API.
+ * The account table is declared INSIDE the guarded branch in signIn(), not
+ * at module scope. `process.env.NODE_ENV` is replaced with a literal at
+ * build time, so in a production build the condition becomes
+ * `"production" !== "production"` and the bundler drops the whole block —
+ * credentials included. A module-level const would survive tree-shaking
+ * and ship the strings, which is what happened on the first attempt.
  *
- * Never add a real account here. Credentials checked in the browser are
- * readable by anyone who opens devtools.
+ * Never put a real account here regardless. Anything compared in the
+ * browser is readable by whoever opens devtools.
  */
-const DEV_ACCOUNTS: Record<string, { password: string; role: Role }> = {
-  "admin@dev.com": { password: "admin", role: "admin" },
-  "staff@dev.com": { password: "staff", role: "staff" },
-};
-
 export const devSignInAvailable = () =>
   process.env.NODE_ENV !== "production" && !process.env.NEXT_PUBLIC_ADMIN_AUTH_API;
 
@@ -97,9 +93,14 @@ export async function signIn(email: string, password: string): Promise<SignInRes
   const endpoint = process.env.NEXT_PUBLIC_ADMIN_AUTH_API;
 
   // Local development: named accounts so the team can walk the flow.
-  // This branch does not exist in a production build.
-  if (!endpoint && devSignInAvailable()) {
-    const account = DEV_ACCOUNTS[email.trim().toLowerCase()];
+  // Declared here so the whole block is dead code — and removed — in a
+  // production build.
+  if (process.env.NODE_ENV !== "production" && !endpoint) {
+    const devAccounts: Record<string, { password: string; role: Role }> = {
+      "admin@dev.com": { password: "admin", role: "admin" },
+      "staff@dev.com": { password: "staff", role: "staff" },
+    };
+    const account = devAccounts[email.trim().toLowerCase()];
     if (!account || account.password !== password) {
       return { ok: false, message: "That email and password did not match." };
     }

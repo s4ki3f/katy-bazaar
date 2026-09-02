@@ -70,13 +70,15 @@ function LoginForm() {
           <div className="mt-5 rounded-lg border border-border bg-muted p-4">
             <p className="font-display text-sm font-bold">Development sign-in</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              No auth server is running, so these local accounts are active. They exist only in a dev
-              build — <code className="font-mono">next build</code> compiles them out.
+              No auth server is running, so the local <code className="font-mono">admin</code> and{" "}
+              <code className="font-mono">staff</code> accounts are active. They exist only in a dev
+              build — <code className="font-mono">next build</code> removes them.
             </p>
-            <ul className="mt-2 space-y-0.5 font-mono text-xs">
-              <li>admin@dev.com / admin</li>
-              <li>staff@dev.com / staff</li>
-            </ul>
+            <p className="mt-2 text-xs text-muted-foreground">
+              The credentials are in <code className="font-mono">README.md</code>. They are
+              deliberately not printed here: text in JSX ships in the bundle even when the branch
+              around it never runs.
+            </p>
           </div>
         )}
 

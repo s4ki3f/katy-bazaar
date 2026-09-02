@@ -62,3 +62,31 @@ src/
   context/        # CartContext (localStorage-backed)
   lib/            # site.config.ts, products.ts, format.ts
 ```
+
+## Counter (staff) app
+
+The order screens at `/admin` are excluded from the public build. A static
+export cannot authenticate anyone, so publishing them would expose customer
+names and phone numbers to anyone with the URL.
+
+```bash
+npm run dev:counter      # storefront + /admin locally
+npm run build:counter    # the staff deployment
+npm run build            # public build — no admin surface at all
+```
+
+### Development sign-in
+
+With no auth server configured, two local accounts are active **in dev only**:
+
+| Email | Password | Role |
+|---|---|---|
+| `admin@dev.com` | `admin` | admin — all controls |
+| `staff@dev.com` | `staff` | staff — picking only |
+
+`next build` removes this branch entirely; a production bundle contains
+neither the check nor the credentials. For a real deployment set
+`NEXT_PUBLIC_ADMIN_AUTH_API` to a server that verifies credentials, or — the
+right answer for a single shop — put host-level password protection
+(Cloudflare Access, Netlify, Vercel) in front of `/admin` and skip the auth
+server. See `src/lib/admin/auth.ts`.
