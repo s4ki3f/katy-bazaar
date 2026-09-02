@@ -87,11 +87,19 @@ export default function HomePage() {
                 className="group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-card p-5 text-white shadow-soft transition-shadow hover:shadow-lift"
                 style={{ background: `linear-gradient(135deg, ${c.hue[0]}, ${c.hue[1]})` }}
               >
+                {/* real aisle photography, with the gradient showing through as a tint */}
+                <ProductImage
+                  slug={c.heroSlug}
+                  name=""
+                  category={c.slug}
+                  className="absolute inset-0 h-full w-full scale-105 transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
                 <div className="absolute right-4 top-4 opacity-0 transition-opacity group-hover:opacity-100">
                   <ArrowIcon width={22} height={22} />
                 </div>
-                <h3 className="font-display text-lg font-bold">{c.name}</h3>
-                <p className="text-sm text-white/80">{c.blurb}</p>
+                <h3 className="relative font-display text-lg font-bold drop-shadow">{c.name}</h3>
+                <p className="relative text-sm text-white/85 drop-shadow">{c.blurb}</p>
               </Link>
             </Reveal>
           ))}

@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
-import { site } from "@/lib/site.config";
+import { site, contactIsPlaceholder } from "@/lib/site.config";
 import { money } from "@/lib/format";
+import { computeTax } from "@/lib/tax";
+import { isWeighed } from "@/lib/products";
+import { getPickupSlots } from "@/lib/slots";
+import { submitOrder, orderReference, type Order } from "@/lib/order";
 import { CheckIcon, ArrowIcon, PinIcon } from "@/components/icons";
 
 type Payment = "cash" | "card";
@@ -13,6 +17,12 @@ export default function CheckoutPage() {
   const { lines, subtotal, clear, ready } = useCart();
   const [payment, setPayment] = useState<Payment>("cash");
   const [placed, setPlaced] = useState<string | null>(null);
+  const [slotId, setSlotId] = useState<string>("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // slots are time-dependent, so compute once per mount (never during render on the server)
+  const slots = useMemo(() => getPickupSlots(), []);
 
   if (!ready) return <div className="mx-auto max-w-3xl px-6 py-24 text-center text-muted-foreground">Loading…</div>;
 
@@ -28,8 +38,8 @@ export default function CheckoutPage() {
           <span className="font-bold text-foreground">{placed}</span>.
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          We&apos;ll have your order bagged and ready for pickup at {site.address.line1}, {site.address.city}.
-          A demo confirmation — no payment was processed.
+          We&apos;ll have your order bagged and ready for pickup in {site.address.city}. Pay at the
+          counter when you collect — nothing has been charged.
         </p>
         <Link href="/shop" className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-semibold text-on-primary hover:bg-primary-dark">
           Continue shopping <ArrowIcon width={18} height={18} />
@@ -49,14 +59,55 @@ export default function CheckoutPage() {
     );
   }
 
-  const tax = subtotal * site.taxRate;
+  const { tax, allExempt } = computeTax(lines);
   const total = subtotal + tax;
+  const anyWeighed = lines.some((l) => isWeighed(l.product));
+  const chosenSlot = slots.find((s) => s.id === slotId);
 
-  function placeOrder(e: React.FormEvent) {
+  async function placeOrder(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const num = "KB-" + Math.floor(100000 + Math.random() * 900000);
+    if (submitting) return;
+    setSubmitError(null);
+
+    const form = new FormData(e.currentTarget);
+    const reference = orderReference();
+
+    const order: Order = {
+      reference,
+      placedAt: new Date().toISOString(),
+      customer: {
+        name: String(form.get("name") ?? ""),
+        phone: String(form.get("phone") ?? ""),
+        email: String(form.get("email") ?? ""),
+      },
+      pickupSlot: chosenSlot ? `${chosenSlot.dayLabel}, ${chosenSlot.timeLabel}` : "No preference",
+      notes: String(form.get("notes") ?? "") || undefined,
+      paymentPreference: payment,
+      lines: lines.map((l) => ({
+        name: l.product.name,
+        unit: l.product.unit,
+        qty: l.qty,
+        lineTotal: l.lineTotal,
+        cut: l.cut,
+        allowSubstitution: l.allowSub,
+      })),
+      subtotal,
+      tax,
+      total,
+      hasWeighedItems: anyWeighed,
+    };
+
+    setSubmitting(true);
+    const result = await submitOrder(order);
+    setSubmitting(false);
+
+    if (!result.ok) {
+      setSubmitError(result.message);
+      return;
+    }
+
     clear();
-    setPlaced(num);
+    setPlaced(reference);
     window.scrollTo({ top: 0 });
   }
 
@@ -77,17 +128,53 @@ export default function CheckoutPage() {
               <PinIcon width={22} height={22} className="mt-0.5 shrink-0 text-primary" />
               <div className="text-sm">
                 <p className="font-display font-semibold text-foreground">{site.fullName}</p>
-                <p className="text-muted-foreground">
-                  {site.address.line1}, {site.address.line2}<br />
-                  {site.address.city}, {site.address.state} {site.address.zip}
-                </p>
+                {contactIsPlaceholder ? (
+                  <p className="text-muted-foreground">
+                    {site.address.city}, {site.address.state} {site.address.zip}
+                    <br />
+                    <span className="text-xs">Full street address confirmed on your pickup message.</span>
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground">
+                    {site.address.line1}, {site.address.line2}
+                    <br />
+                    {site.address.city}, {site.address.state} {site.address.zip}
+                  </p>
+                )}
                 <p className="mt-1 font-medium text-primary">Usually ready within the hour</p>
               </div>
             </div>
-            <div className="mt-4">
-              <Field label="Preferred pickup time (optional)">
-                <input type="text" placeholder="e.g. Today around 5:30 PM" className={inputCls} />
-              </Field>
+            <div className="mt-5">
+              <p className="mb-2 text-sm font-medium text-foreground/80">Choose a pickup time</p>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {slots.slice(0, 9).map((s) => {
+                  const full = s.remaining === 0;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      disabled={full}
+                      onClick={() => setSlotId(s.id)}
+                      className={`rounded-lg border-2 px-3 py-2.5 text-left transition-colors ${
+                        full
+                          ? "cursor-not-allowed border-border opacity-50"
+                          : slotId === s.id
+                            ? "cursor-pointer border-primary bg-primary/5"
+                            : "cursor-pointer border-border hover:border-primary/40"
+                      }`}
+                    >
+                      <span className="block font-display text-sm font-semibold">{s.dayLabel}</span>
+                      <span className="block text-xs text-muted-foreground">{s.timeLabel}</span>
+                      <span className={`mt-0.5 block text-[11px] font-semibold ${full ? "text-muted-foreground" : "text-primary"}`}>
+                        {full ? "Full" : `${s.remaining} left`}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Friday 1:00 – 2:30 PM is closed for Jummah, so no slots are offered then.
+              </p>
             </div>
           </section>
 
@@ -95,10 +182,10 @@ export default function CheckoutPage() {
           <section className="rounded-card border border-border bg-surface p-6">
             <h2 className="font-display text-lg font-bold">Your details</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <Field label="Full name"><input required autoComplete="name" className={inputCls} /></Field>
-              <Field label="Phone"><input required type="tel" autoComplete="tel" className={inputCls} /></Field>
-              <Field label="Email" className="sm:col-span-2"><input required type="email" autoComplete="email" className={inputCls} /></Field>
-              <Field label="Order notes (optional)" className="sm:col-span-2"><textarea rows={2} className={inputCls} placeholder="Custom cuts, special requests, etc." /></Field>
+              <Field label="Full name"><input name="name" required autoComplete="name" className={inputCls} /></Field>
+              <Field label="Phone"><input name="phone" required type="tel" autoComplete="tel" className={inputCls} /></Field>
+              <Field label="Email" className="sm:col-span-2"><input name="email" required type="email" autoComplete="email" className={inputCls} /></Field>
+              <Field label="Order notes (optional)" className="sm:col-span-2"><textarea name="notes" rows={2} className={inputCls} placeholder="Anything for the whole order — cut instructions are set per item in your cart." /></Field>
             </div>
           </section>
 
@@ -135,11 +222,16 @@ export default function CheckoutPage() {
           <div className="rounded-card border border-border bg-surface p-6 shadow-soft">
             <h2 className="font-display text-lg font-bold">Your order</h2>
             <ul className="mt-4 max-h-64 space-y-3 overflow-y-auto pr-1">
-              {lines.map(({ product, qty, lineTotal }) => (
-                <li key={product.id} className="flex items-center justify-between gap-3 text-sm">
+              {lines.map(({ product, qty, lineTotal, cut, allowSub }) => (
+                <li key={product.id} className="flex items-start justify-between gap-3 text-sm">
                   <span className="flex-1">
                     <span className="font-medium">{product.name}</span>
-                    <span className="text-muted-foreground"> × {qty}</span>
+                    <span className="text-muted-foreground"> × {qty}{isWeighed(product) ? " lb" : ""}</span>
+                    {(cut || !allowSub) && (
+                      <span className="mt-0.5 block text-xs text-muted-foreground">
+                        {cut}{cut && !allowSub ? " · " : ""}{!allowSub ? "no substitutions" : ""}
+                      </span>
+                    )}
                   </span>
                   <span className="font-semibold">{money(lineTotal)}</span>
                 </li>
@@ -148,13 +240,28 @@ export default function CheckoutPage() {
             <dl className="mt-4 space-y-2.5 border-t border-border pt-4 text-sm">
               <div className="flex justify-between"><dt className="text-muted-foreground">Subtotal</dt><dd className="font-semibold">{money(subtotal)}</dd></div>
               <div className="flex justify-between"><dt className="text-muted-foreground">Pickup</dt><dd className="font-semibold">Free</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">Est. tax</dt><dd className="font-semibold">{money(tax)}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">Sales tax</dt><dd className="font-semibold">{money(tax)}</dd></div>
+              {allExempt && <p className="text-xs text-muted-foreground">Groceries are exempt from Texas sales tax.</p>}
               <div className="flex justify-between border-t border-border pt-3 text-base"><dt className="font-display font-bold">Total</dt><dd className="font-display font-bold">{money(total)}</dd></div>
             </dl>
-            <button type="submit" className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 font-semibold text-on-primary transition-colors hover:bg-primary-dark cursor-pointer">
-              Place pickup order · {money(total)}
+            {anyWeighed && (
+              <p className="mt-3 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
+                Your total is an estimate — items sold by the pound are settled at the counter once weighed.
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 font-semibold text-on-primary transition-colors hover:bg-primary-dark cursor-pointer disabled:opacity-60"
+            >
+              {submitting ? "Sending…" : `Place pickup order · ${money(total)}`}
             </button>
-            <p className="mt-3 text-center text-xs text-muted-foreground">This is a demo store. No payment is processed.</p>
+            {submitError && (
+              <p className="mt-3 rounded-lg bg-destructive/10 p-3 text-xs text-destructive">{submitError}</p>
+            )}
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              You pay at the counter when you collect. Nothing is charged now.
+            </p>
           </div>
         </aside>
       </form>

@@ -36,8 +36,34 @@ export const site = {
 
   // Storefront settings
   currency: "$",
-  taxRate: 0.0825, // 8.25% (Katy, TX placeholder)
+
+  /**
+   * Combined state + local sales-tax rate for Katy, TX 77494 (6.25% state
+   * + 1% city + 1% special district). Applied ONLY to items classified
+   * `taxable` in the catalog — see src/lib/tax.ts. Most groceries are
+   * exempt in Texas.
+   */
+  taxRate: 0.0825,
+
+  /**
+   * Star ratings are currently seeded demo values. Publishing invented
+   * review counts is an FTC problem, so they stay hidden until wired to
+   * real reviews. Flip to true once ratings come from actual customers.
+   */
+  showRatings: false,
+
+  /**
+   * TODO: the certifying body behind the "100% Zabihah Halal" claim.
+   * Leave null and the certification block stays hidden — better than
+   * an unbacked claim.
+   */
+  halalCertifier: null as null | { name: string; certificateUrl?: string },
 } as const;
+
+/** True while site.config still holds the scaffolded placeholder values. */
+export const contactIsPlaceholder =
+  site.phone.includes("000-0000") || site.address.line1.toLowerCase().includes("placeholder");
+
 
 export const valueProps = [
   {
