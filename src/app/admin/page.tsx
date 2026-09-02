@@ -48,12 +48,14 @@ function AdminDisabled() {
     <div className="mx-auto max-w-lg px-6 py-24 text-center">
       <h1 className="font-display text-2xl font-bold">Counter app is not enabled here</h1>
       <p className="mt-3 text-sm text-muted-foreground">
-        This build does not include the order screens. A static export cannot authenticate anyone,
-        so publishing them would expose customer names and phone numbers to anyone with the URL.
+        This build has no sign-in configured, and the order screens hold customer names and phone
+        numbers — so they were left out rather than published unprotected.
       </p>
       <p className="mt-3 text-sm text-muted-foreground">
-        Deploy the counter app separately with <code className="font-mono">NEXT_PUBLIC_ENABLE_ADMIN=true</code>{" "}
-        onto a host that can put a login in front of it.
+        Set <code className="font-mono">NEXT_PUBLIC_ADMIN_AUTH_API=/api/auth</code> together with{" "}
+        <code className="font-mono">COUNTER_SESSION_SECRET</code> and the staff accounts, and the
+        counter app appears automatically. Setting{" "}
+        <code className="font-mono">NEXT_PUBLIC_ENABLE_ADMIN=true</code> also includes it.
       </p>
     </div>
   );

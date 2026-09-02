@@ -10,10 +10,11 @@
 //  shipped inside the JS bundle; a "logged in" flag in storage can be set
 //  by anyone with devtools. Client code cannot protect data.
 //
-//  What this module IS: a real session flow against a server that does
-//  the checking. signIn() posts credentials to NEXT_PUBLIC_ADMIN_AUTH_API
-//  and keeps the returned token for the tab. The orders API is expected to
-//  reject requests without it. The security lives on the server.
+//  What this module IS: a real session flow against a server that does the
+//  checking. signIn() posts credentials to NEXT_PUBLIC_ADMIN_AUTH_API —
+//  this app ships one at /api/auth — and keeps the returned token for the
+//  tab. The orders and inventory routes reject requests without it. The
+//  security lives on the server.
 //
 //  Three deployments that are actually safe, in order of effort:
 //

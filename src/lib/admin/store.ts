@@ -99,13 +99,20 @@ export class ApiOrderStore implements OrderStore {
 }
 
 /**
- * The counter app is excluded from the public build unless this is set.
- * A static export cannot authenticate anyone, so shipping the order UI to
- * GitHub Pages would expose customer names and phone numbers to anyone
- * with the URL. Real deployments set NEXT_PUBLIC_ENABLE_ADMIN=true on a
- * host that can put a login in front of it.
+ * Whether this build includes the counter app.
+ *
+ * It ships when either is true:
+ *   • NEXT_PUBLIC_ENABLE_ADMIN=true — an explicit decision, or
+ *   • NEXT_PUBLIC_ADMIN_AUTH_API is set — a sign-in server exists, so the
+ *     order screens are protected and there is no reason to withhold them.
+ *
+ * A build with neither has no way to authenticate anyone, and the order
+ * screens hold customer names and phone numbers, so they are left out
+ * rather than published unprotected.
  */
-export const adminEnabled = () => process.env.NEXT_PUBLIC_ENABLE_ADMIN === "true";
+export const adminEnabled = () =>
+  process.env.NEXT_PUBLIC_ENABLE_ADMIN === "true" ||
+  Boolean(process.env.NEXT_PUBLIC_ADMIN_AUTH_API);
 
 export function getOrderStore(): OrderStore {
   // The app now ships with its own API, so the server is the default and
