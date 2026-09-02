@@ -129,15 +129,26 @@ export default function HomePage() {
           </Reveal>
           <div className="grid grid-cols-2 gap-4">
             {[
-              { k: "Daily", v: "Fresh cuts" },
-              { k: "4", v: "Meat types" },
-              { k: "100%", v: "Zabihah halal" },
-              { k: "0$", v: "Custom-cut fee" },
-            ].map((s) => (
-              <div key={s.v} className="rounded-card border border-white/10 bg-white/5 p-6 text-center">
-                <div className="font-display text-3xl font-bold text-accent">{s.k}</div>
-                <div className="mt-1 text-sm text-white/70">{s.v}</div>
-              </div>
+              { slug: "goat-bone-in", cat: "halal-meat", k: "Daily", v: "Fresh cuts" },
+              { slug: "lamb-chops", cat: "halal-meat", k: "4", v: "Meat types" },
+              { slug: "beef-boneless-cubes", cat: "halal-meat", k: "100%", v: "Zabihah halal" },
+              { slug: "whole-chicken", cat: "poultry", k: "$0", v: "Custom-cut fee" },
+            ].map((s, i) => (
+              <Reveal key={s.v} delay={i * 70}>
+                <div className="relative aspect-[4/3] overflow-hidden rounded-card border border-white/10">
+                  <ProductImage
+                    slug={s.slug}
+                    name=""
+                    category={s.cat}
+                    className="absolute inset-0 h-full w-full transition-transform duration-500 hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-4">
+                    <div className="font-display text-2xl font-bold text-accent drop-shadow">{s.k}</div>
+                    <div className="text-xs text-white/85 drop-shadow">{s.v}</div>
+                  </div>
+                </div>
+              </Reveal>
             ))}
           </div>
         </div>

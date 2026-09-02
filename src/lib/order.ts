@@ -17,6 +17,8 @@ import { site } from "./site.config";
 import { money } from "./format";
 
 export type OrderLine = {
+  /** catalog product id, so the counter app can resolve tax class and unit */
+  productId: string;
   name: string;
   unit: string;
   qty: number;

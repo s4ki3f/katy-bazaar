@@ -100,6 +100,7 @@ export default function CheckoutPage() {
       pickupSlot: chosenSlot ? `${chosenSlot.dayLabel}, ${chosenSlot.timeLabel}` : "No preference",
       notes: String(form.get("notes") ?? "") || undefined,
       lines: lines.map((l) => ({
+        productId: l.product.id,
         name: l.product.name,
         unit: l.product.unit,
         qty: l.qty,

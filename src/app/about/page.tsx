@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { site, valueProps } from "@/lib/site.config";
 import { Reveal } from "@/components/Reveal";
+import { ProductImage } from "@/components/ProductImage";
 import { ICON_MAP, ArrowIcon } from "@/components/icons";
 
 export const metadata: Metadata = {
@@ -12,8 +13,15 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <>
-      <section className="bg-gradient-to-br from-primary to-primary-dark text-white">
-        <div className="mx-auto max-w-4xl px-6 py-20 text-center">
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary to-primary-dark text-white">
+        <ProductImage
+          slug="goat-bone-in"
+          name=""
+          category="halal-meat"
+          className="absolute inset-0 h-full w-full opacity-25"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-primary-dark/95" />
+        <div className="relative mx-auto max-w-4xl px-6 py-20 text-center">
           <span className="text-sm font-bold uppercase tracking-widest text-white/70">Our Story</span>
           <h1 className="mt-3 font-display text-4xl font-bold sm:text-5xl">More than a store — a neighborhood bazaar.</h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-white/85">{site.description}</p>
