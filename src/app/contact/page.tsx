@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { site, phoneIsPlaceholder, addressIsPlaceholder, addressLines } from "@/lib/site.config";
+import { site, phoneIsPlaceholder, addressIsPlaceholder, addressLines, emailIsPlaceholder } from "@/lib/site.config";
 import { PhoneIcon, PinIcon, ClockIcon } from "@/components/icons";
 import { ContactForm } from "@/components/ContactForm";
 
@@ -33,7 +33,23 @@ export default function ContactPage() {
             {phoneIsPlaceholder
               ? <span>Phone number coming soon</span>
               : <a href={`tel:${site.phone.replace(/[^0-9+]/g, "")}`} className="hover:text-primary">{site.phone}</a>}<br />
-            <a href={`mailto:${site.email}`} className="hover:text-primary">{site.email}</a>
+            {emailIsPlaceholder ? (
+              <>
+                <a href={site.socials.whatsapp} target="_blank" rel="noopener noreferrer" className="hover:text-primary">
+                  Message us on WhatsApp
+                </a>
+                <br />
+                <a href={site.socials.facebook} target="_blank" rel="noopener noreferrer" className="hover:text-primary">
+                  Facebook
+                </a>
+                {" · "}
+                <a href={site.socials.tiktok} target="_blank" rel="noopener noreferrer" className="hover:text-primary">
+                  TikTok
+                </a>
+              </>
+            ) : (
+              <a href={`mailto:${site.email}`} className="hover:text-primary">{site.email}</a>
+            )}
           </InfoCard>
           <InfoCard icon={<ClockIcon width={22} height={22} />} title="Store hours">
             <ul className="space-y-1">

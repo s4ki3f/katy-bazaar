@@ -18,6 +18,18 @@ export const site = {
   // No suite number is published, so line2 is intentionally empty.
   // TODO: confirm the email — it is still the scaffold value.
   phone: "(936) 463-1811",
+
+  /**
+   * SCAFFOLD VALUE — not a real mailbox.
+   *
+   * The store publishes no email address anywhere: not on its Facebook
+   * page, not on the web. katybazaar.com is registered but has no A record
+   * and no MX record, so mail sent there cannot be delivered at all — a
+   * customer emailing it gets a bounce or silence.
+   *
+   * It is therefore hidden everywhere (see emailIsPlaceholder) until a
+   * real, monitored address exists. Replace this and it appears again.
+   */
   email: "hello@katybazaar.com",
   address: {
     line1: "1717 S Mason Rd",
@@ -34,8 +46,10 @@ export const site = {
   ],
 
   socials: {
-    facebook: "https://www.facebook.com/",
-    instagram: "https://www.instagram.com/",
+    // The store's actual page, not the generic facebook.com the scaffold had.
+    facebook: "https://www.facebook.com/people/Katy-Bazaar-Halal-meat/61572351023110/",
+    // Listed by the store in its own Facebook intro.
+    tiktok: "https://www.tiktok.com/@katy.bazaar.halal",
 
     /**
      * ⚠️ ORDERS GO NOWHERE UNTIL THIS IS REAL.
@@ -97,6 +111,8 @@ export const site = {
  * true — the city, state and ZIP.
  */
 export const phoneIsPlaceholder = /0{3}-?0{4}|000-0000/.test(site.phone);
+/** The scaffold email, on a domain with no MX record — mail to it bounces. */
+export const emailIsPlaceholder = site.email === "hello@katybazaar.com";
 export const addressIsPlaceholder =
   site.address.line1.toLowerCase().includes("placeholder") || /^0+\s/.test(site.address.line1);
 export const contactIsPlaceholder = phoneIsPlaceholder || addressIsPlaceholder;
