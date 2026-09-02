@@ -1,30 +1,23 @@
 import type { NextConfig } from "next";
 
 /**
- * One config, two targets.
+ * Dynamic Next.js app, server-rendered and deployed to Vercel.
  *
- * Vercel sets VERCEL=1 during its builds. There we want a SERVER — API
- * routes, real auth for the counter app — and the site served from the
- * domain root.
- *
- * Everywhere else the build stays a static export under /katy-bazaar so
- * the existing GitHub Pages workflow keeps working untouched.
+ * This was previously a static export under a /katy-bazaar base path for
+ * GitHub Pages. That is gone: a static site cannot authenticate staff,
+ * cannot receive an order, and cannot show the shop's own inventory edits
+ * to customers. All three now work because there is a server.
  */
-const onVercel = Boolean(process.env.VERCEL);
-
-// Pages needs the repo name as a base path; a Vercel domain serves from root.
-const basePath = process.env.BASE_PATH ?? (onVercel ? "" : "/katy-bazaar");
-
 const nextConfig: NextConfig = {
-  ...(onVercel ? {} : { output: "export" as const }), // static HTML export -> ./out
-  basePath: basePath || undefined,
-  assetPrefix: basePath || undefined,
-  trailingSlash: true,
+  // No trailingSlash: it existed so GitHub Pages could serve /shop/index.html.
+  // With a server it only causes 308 redirects on API routes, which break
+  // POSTs from any client that does not follow redirects.
   images: {
-    unoptimized: !onVercel, // Vercel can optimise; GitHub Pages cannot
+    remotePatterns: [],
   },
   env: {
-    NEXT_PUBLIC_BASE_PATH: basePath,
+    // kept so existing asset helpers resolve to the domain root
+    NEXT_PUBLIC_BASE_PATH: "",
   },
 };
 

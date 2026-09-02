@@ -83,11 +83,12 @@ export class ApiInventoryStore implements InventoryStore {
 }
 
 export function getInventoryStore(): InventoryStore {
-  const base = process.env.NEXT_PUBLIC_INVENTORY_API;
-  return base ? new ApiInventoryStore(base) : new LocalInventoryStore();
+  // Served by this app, so inventory edits reach the storefront.
+  const base = process.env.NEXT_PUBLIC_INVENTORY_API ?? "/api/inventory";
+  return new ApiInventoryStore(base);
 }
 
-export const inventoryIsLocalOnly = () => !process.env.NEXT_PUBLIC_INVENTORY_API;
+export const inventoryIsLocalOnly = () => false;
 
 /** The catalog as the shop has actually configured it. */
 export function effectiveCatalog(state: InventoryState): Product[] {

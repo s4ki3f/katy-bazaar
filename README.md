@@ -122,46 +122,60 @@ See `.env.example` for every variable.
 
 ## Deploying to Vercel
 
-The same codebase builds two ways. Vercel sets `VERCEL=1`, which switches
-off the static export and the `/katy-bazaar` base path automatically — no
-config edit, and the GitHub Pages workflow keeps working untouched.
+This is a dynamic, server-rendered Next.js app. It was a static export for
+GitHub Pages; that is gone, because a static site cannot authenticate
+staff, cannot receive an order, and cannot show the shop's own inventory
+edits to customers.
 
 ```bash
 npm i -g vercel
 vercel login
-vercel link          # once, from this directory
-vercel               # preview deployment
-vercel --prod        # production, after checking the preview
+vercel link
+vercel               # preview
+vercel --prod        # production
 ```
 
-### Environment variables to set in the Vercel dashboard
+### Environment variables
 
-Project → Settings → Environment Variables. None of these are
-`NEXT_PUBLIC_`, so they never reach the browser bundle.
+Project → Settings → Environment Variables. Nothing here is
+`NEXT_PUBLIC_`, so none of it reaches the browser bundle.
 
 | Variable | Purpose |
 |---|---|
-| `NEXT_PUBLIC_ENABLE_ADMIN` | `true` to include the counter app in the build |
-| `NEXT_PUBLIC_ADMIN_AUTH_API` | `/api/auth` — makes the counter login real |
-| `COUNTER_SESSION_SECRET` | long random string; signs session tokens |
+| `NEXT_PUBLIC_ENABLE_ADMIN` | `true` to include the counter app |
+| `NEXT_PUBLIC_ADMIN_AUTH_API` | `/api/auth` |
+| `COUNTER_SESSION_SECRET` | signs session tokens — `openssl rand -base64 32` |
 | `COUNTER_ADMIN_EMAIL` / `COUNTER_ADMIN_PASSWORD` | admin account |
 | `COUNTER_STAFF_EMAIL` / `COUNTER_STAFF_PASSWORD` | staff account |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | datastore — Vercel → Storage → Redis |
 
-Generate a secret with `openssl rand -base64 32`.
+Without Redis, development falls back to a JSON file under `.data/` and
+**production refuses to write**, returning 503 rather than losing an order
+to an ephemeral serverless filesystem.
+
+### What the server bought
+
+| | Static export | Dynamic |
+|---|---|---|
+| Staff sign-in | credentials in the bundle | checked server-side |
+| Orders | WhatsApp hand-off only | received and queued by the app |
+| Counter queue | one browser | shared across devices |
+| Inventory edits | never reached customers | server-rendered on the storefront |
+| Images | unoptimised | optimised |
+
+### API
+
+| Route | Auth | Purpose |
+|---|---|---|
+| `POST /api/auth` | — | sign in, returns `{ token, role }` |
+| `POST /api/orders` | none | a customer places an order (idempotent by reference) |
+| `GET /api/orders` | Bearer | the counter queue |
+| `PUT /api/orders/[reference]` | Bearer | update an order while picking |
+| `GET /api/inventory` | none | live catalog overlay, read by the storefront |
+| `PUT /api/inventory` | Bearer | save catalog edits |
 
 ### Protect /admin
 
-Even with the login above, add **Vercel Deployment Protection** (Project →
-Settings → Deployment Protection) in front of the deployment. Two locks are
-better than one for a page holding customer names and phone numbers, and it
-costs no code.
-
-### Why bother moving off Pages
-
-- Real server-side auth — no credentials in the browser bundle at all.
-- API routes, so `NEXT_PUBLIC_ORDERS_API` and `NEXT_PUBLIC_INVENTORY_API`
-  can be served from this same project and the counter stops being
-  one-browser-only.
-- Image optimisation, which GitHub Pages cannot do.
-- `katybazaar.com` is already registered and currently points nowhere —
-  attach it here instead of a github.io URL.
+Add **Vercel Deployment Protection** in front of the deployment as well as
+the login. Two locks on a page holding customer names and phone numbers,
+and it costs no code.

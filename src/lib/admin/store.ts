@@ -108,8 +108,11 @@ export class ApiOrderStore implements OrderStore {
 export const adminEnabled = () => process.env.NEXT_PUBLIC_ENABLE_ADMIN === "true";
 
 export function getOrderStore(): OrderStore {
-  const base = process.env.NEXT_PUBLIC_ORDERS_API;
-  return base ? new ApiOrderStore(base) : new LocalOrderStore();
+  // The app now ships with its own API, so the server is the default and
+  // every device sees the same queue. Override only to point elsewhere.
+  const base = process.env.NEXT_PUBLIC_ORDERS_API ?? "/api/orders";
+  return new ApiOrderStore(base);
 }
 
-export const isLocalOnly = () => !process.env.NEXT_PUBLIC_ORDERS_API;
+/** Kept for the UI copy; the API is always used now. */
+export const isLocalOnly = () => false;

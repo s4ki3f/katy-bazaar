@@ -90,7 +90,9 @@ export function orderToText(o: Order): string {
 }
 
 export async function submitOrder(order: Order): Promise<SubmitResult> {
-  const endpoint = process.env.NEXT_PUBLIC_ORDER_ENDPOINT;
+  // The app now receives its own orders. WhatsApp remains available as a
+  // secondary channel by setting NEXT_PUBLIC_ORDER_ENDPOINT to "whatsapp".
+  const endpoint = process.env.NEXT_PUBLIC_ORDER_ENDPOINT ?? "/api/orders";
 
   if (endpoint) {
     try {
