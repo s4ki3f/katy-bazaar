@@ -107,6 +107,6 @@ export async function submitOrder(order: Order): Promise<SubmitResult> {
     ok: false,
     via: "unconfigured",
     message:
-      "No order destination is configured yet. Set NEXT_PUBLIC_ORDER_ENDPOINT, or put the store's real WhatsApp number in site.config.ts.",
+      "Orders have nowhere to go yet, so this one was not sent. Either put the store's real WhatsApp number in site.config.ts (socials.whatsapp, e.g. https://wa.me/12815551234) — no server needed — or set NEXT_PUBLIC_ORDER_ENDPOINT to any URL that accepts a JSON POST. See .env.example.",
   };
 }

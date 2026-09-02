@@ -31,6 +31,23 @@ export const site = {
   socials: {
     facebook: "https://www.facebook.com/",
     instagram: "https://www.instagram.com/",
+
+    /**
+     * ⚠️ ORDERS GO NOWHERE UNTIL THIS IS REAL.
+     *
+     * Replace with the store's actual WhatsApp number in wa.me form —
+     * country code, no spaces or symbols. US example:
+     *   https://wa.me/12815551234
+     *
+     * With a real number here, placing an order opens WhatsApp with the
+     * whole order pre-filled and the shop receives it. That is the
+     * zero-infrastructure option and it suits how this customer base
+     * already contacts the store.
+     *
+     * The alternative is NEXT_PUBLIC_ORDER_ENDPOINT (see .env.example),
+     * which takes precedence when set. Until one of the two exists,
+     * checkout refuses to confirm rather than pretend the order arrived.
+     */
     whatsapp: "https://wa.me/1281000000",
   },
 

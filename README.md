@@ -90,3 +90,32 @@ neither the check nor the credentials. For a real deployment set
 right answer for a single shop — put host-level password protection
 (Cloudflare Access, Netlify, Vercel) in front of `/admin` and skip the auth
 server. See `src/lib/admin/auth.ts`.
+
+## Where do orders go?
+
+Checkout will not confirm an order until it has somewhere to send it. That
+is deliberate — the alternative is telling a customer their order was
+received when nothing received it.
+
+Pick one:
+
+**1. WhatsApp — no server, works today.** Put the store's real number in
+`src/lib/site.config.ts` under `socials.whatsapp`, in `wa.me` form:
+
+```ts
+whatsapp: "https://wa.me/12815551234",   // country code, digits only
+```
+
+Placing an order then opens WhatsApp with the full order pre-filled —
+pickup ID, every line, cut instructions, substitution preferences, total.
+
+**2. A hosted endpoint — still no server of your own.** Set
+`NEXT_PUBLIC_ORDER_ENDPOINT` to anything that accepts a JSON POST:
+Formspree, Web3Forms, a Zapier/Make catch hook, a Google Apps Script web
+app. This takes precedence over WhatsApp when set.
+
+**3. Your own API.** Same variable, your URL. Pair it with
+`NEXT_PUBLIC_ORDERS_API` so the counter app reads the same orders and the
+shop is no longer limited to one browser.
+
+See `.env.example` for every variable.
