@@ -97,7 +97,16 @@ function Counter() {
     return () => { alive = false; };
   }, [store]);
 
-  const inTab = orders.filter((o) => o.status === tab);
+  // A reload resets `tab` to "new". If the counter had already started
+  // picking, that tab is empty and the order looks like it vanished — so
+  // fall through to the first status that actually has work in it.
+  // Derived during render: no storage, no effect, no hydration mismatch.
+  const tabHasWork = orders.some((o) => o.status === tab);
+  const effectiveTab: OrderStatus = tabHasWork
+    ? tab
+    : (STATUSES.find((s) => orders.some((o) => o.status === s.id))?.id ?? tab);
+
+  const inTab = orders.filter((o) => o.status === effectiveTab);
   const current = orders.find((o) => o.reference === selected) ?? inTab[0] ?? null;
 
   async function update(next: CounterOrder) {
@@ -111,7 +120,9 @@ function Counter() {
 
   function setPick(o: CounterOrder, idx: number, pick: PickState) {
     const lines = o.lines.map((l, i) => (i === idx ? { ...l, pick } : l));
-    void update({ ...o, lines, status: o.status === "new" ? "picking" : o.status });
+    const status = o.status === "new" ? "picking" : o.status;
+    if (status !== o.status) setTab(status);
+    void update({ ...o, lines, status });
   }
   function setWeight(o: CounterOrder, idx: number, value: string) {
     const n = value === "" ? undefined : Math.max(0, Number(value));
@@ -193,9 +204,9 @@ function Counter() {
             <button
               key={s.id}
               onClick={() => { setTab(s.id); setSelected(null); }}
-              aria-pressed={tab === s.id}
+              aria-pressed={effectiveTab === s.id}
               className={`rounded-full border-2 px-4 py-2 text-sm font-semibold transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring ${
-                tab === s.id ? "border-primary bg-primary/5 text-primary" : "border-border hover:border-primary/40"
+                effectiveTab === s.id ? "border-primary bg-primary/5 text-primary" : "border-border hover:border-primary/40"
               }`}
             >
               {s.label} <span className="tabular-nums opacity-70">{n}</span>
@@ -218,7 +229,7 @@ function Counter() {
         <div className="mt-6 grid gap-6 lg:grid-cols-[300px_1fr]">
           {/* queue */}
           <div className="space-y-2 print:hidden">
-            {inTab.length === 0 && <p className="text-sm text-muted-foreground">Nothing in {tab}.</p>}
+            {inTab.length === 0 && <p className="text-sm text-muted-foreground">Nothing in {effectiveTab}.</p>}
             {inTab.map((o) => (
               <button
                 key={o.reference}
@@ -257,7 +268,13 @@ function Counter() {
                   </button>
                   {stage?.next && (
                     <button
-                      onClick={() => void update({ ...current, status: stage.next! })}
+                      onClick={() => {
+                        // follow the order into its new column instead of
+                        // dropping it out of view
+                        setTab(stage.next!);
+                        setSelected(current.reference);
+                        void update({ ...current, status: stage.next! });
+                      }}
                       className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary-dark cursor-pointer"
                     >
                       {stage.cta}
