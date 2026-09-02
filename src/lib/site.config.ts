@@ -39,6 +39,12 @@ export const site = {
      * country code, no spaces or symbols. US example:
      *   https://wa.me/12815551234
      *
+     * Currently set to 281-555-0100, which is inside the NANP block
+     * reserved for fictional use (555-0100 to 555-0199). It is a
+     * placeholder, it is detected as one, and a production build treats
+     * it as "no destination configured". Note that 555-1234 is NOT in
+     * the reserved block and could belong to a real subscriber.
+     *
      * With a real number here, placing an order opens WhatsApp with the
      * whole order pre-filled and the shop receives it. That is the
      * zero-infrastructure option and it suits how this customer base
@@ -48,7 +54,7 @@ export const site = {
      * which takes precedence when set. Until one of the two exists,
      * checkout refuses to confirm rather than pretend the order arrived.
      */
-    whatsapp: "https://wa.me/1281000000",
+    whatsapp: "https://wa.me/12815550100",
   },
 
   // Storefront settings

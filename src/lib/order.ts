@@ -48,6 +48,16 @@ export type SubmitResult =
  * Short, human-readable pickup ID. The customer reads it out at the
  * counter, so it is grouped for legibility: KB-482 193.
  */
+/**
+ * 555-0100 through 555-0199 is the NANP block reserved for fictional use,
+ * and 1281000000 is the original scaffold value. Either means "not a real
+ * destination".
+ */
+export function whatsappIsPlaceholder(url: string): boolean {
+  const digits = url.replace(/\D/g, "");
+  return /^1?\d{3}55501\d{2}$/.test(digits) || /1281000000$/.test(digits);
+}
+
 export function orderReference(seed: number = Date.now()): string {
   const digits = String(seed).slice(-6);
   return `KB-${digits.slice(0, 3)} ${digits.slice(3)}`;
@@ -97,6 +107,25 @@ export async function submitOrder(order: Order): Promise<SubmitResult> {
   }
 
   const wa = site.socials.whatsapp;
+
+  if (wa && whatsappIsPlaceholder(wa)) {
+    // A placeholder must never look configured in production: real orders
+    // would open WhatsApp to a number nobody reads and vanish silently,
+    // which is the exact failure this guard exists to prevent.
+    if (process.env.NODE_ENV === "production") {
+      return {
+        ok: false,
+        via: "unconfigured",
+        message:
+          "The WhatsApp number in site.config.ts is still the 555-01xx placeholder, so this order was not sent. Replace it with the store's real number before going live.",
+      };
+    }
+    // In development, let the flow run so it can be demonstrated end to end.
+    const phone = wa.replace(/\D/g, "");
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(orderToText(order))}`, "_blank", "noopener");
+    return { ok: true, via: "whatsapp" };
+  }
+
   if (wa && !/wa\.me\/1281000000$/.test(wa)) {
     const phone = wa.replace(/\D/g, "");
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(orderToText(order))}`, "_blank", "noopener");
