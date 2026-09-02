@@ -10,6 +10,7 @@ import {
 } from "@/lib/admin/store";
 import { authConfigured, devSignInAvailable, getRole, hasSession, signOut } from "@/lib/admin/auth";
 import { settleOrder, settledLineTotal, lineIsWeighed } from "@/lib/admin/totals";
+import { InventoryPanel } from "@/components/admin/InventoryPanel";
 
 const STATUSES: { id: OrderStatus; label: string; next?: OrderStatus; cta?: string }[] = [
   { id: "new", label: "New", next: "picking", cta: "Start picking" },
@@ -61,6 +62,7 @@ function AdminDisabled() {
 function Counter() {
   const router = useRouter();
   const role = getRole();
+  const [view, setView] = useState<"orders" | "inventory">("orders");
   const store = useMemo(() => getOrderStore(), []);
   const [orders, setOrders] = useState<CounterOrder[]>([]);
   const [tab, setTab] = useState<OrderStatus>("new");
@@ -205,6 +207,24 @@ function Counter() {
 
       {error && <p role="alert" className="mt-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
 
+      <div className="mt-6 inline-flex rounded-full border border-border p-1" role="group" aria-label="Counter view">
+        {(["orders", "inventory"] as const).map((v) => (
+          <button
+            key={v}
+            onClick={() => setView(v)}
+            aria-pressed={view === v}
+            className={`rounded-full px-4 py-1.5 text-sm font-semibold capitalize transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring ${
+              view === v ? "bg-primary text-on-primary" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+
+      {view === "inventory" && <InventoryPanel role={role} />}
+
+      {view === "orders" && (<>
       <div className="mt-6 flex flex-wrap gap-2 print:hidden" role="group" aria-label="Filter by status">
         {STATUSES.map((s) => {
           const n = orders.filter((o) => o.status === s.id).length;
@@ -395,6 +415,7 @@ function Counter() {
           )}
         </div>
       )}
+      </>)}
     </div>
   );
 }
