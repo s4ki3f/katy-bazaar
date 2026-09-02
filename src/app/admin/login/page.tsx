@@ -4,9 +4,33 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signIn, authConfigured } from "@/lib/admin/auth";
+import { adminEnabled } from "@/lib/admin/store";
 import { site } from "@/lib/site.config";
 
 export default function CounterLoginPage() {
+  // The public build ships no admin surface at all — offering a sign-in
+  // form there would advertise the counter app and present something that
+  // can never work.
+  if (!adminEnabled()) return <LoginDisabled />;
+  return <LoginForm />;
+}
+
+function LoginDisabled() {
+  return (
+    <div className="mx-auto max-w-lg px-6 py-24 text-center">
+      <h1 className="font-display text-2xl font-bold">Nothing to sign in to here</h1>
+      <p className="mt-3 text-sm text-muted-foreground">
+        The counter app is not part of this build. It is deployed separately, behind a login, on a
+        host that can actually enforce one.
+      </p>
+      <Link href="/" className="mt-6 inline-block text-sm font-semibold text-primary hover:underline">
+        ← Back to the storefront
+      </Link>
+    </div>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
