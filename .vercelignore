@@ -1,0 +1,11 @@
+# Never upload local secrets or local data to a deployment.
+# Vercel injects real environment variables from the dashboard; if a
+# .env.local reached the build it would bake dev credentials and
+# NEXT_PUBLIC_ENABLE_ADMIN into the public bundle.
+.env
+.env.*
+!.env.example
+.data/
+out/
+.next/
+node_modules/
