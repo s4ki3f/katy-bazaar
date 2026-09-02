@@ -1,0 +1,107 @@
+"use client";
+
+// ─────────────────────────────────────────────────────────────
+//  COUNTER APP — AUTHENTICATION
+//
+//  READ THIS BEFORE DEPLOYING.
+//
+//  A Next.js static export has no server, so nothing here can be trusted
+//  to keep anyone out on its own. A passcode compared in the browser is
+//  shipped inside the JS bundle; a "logged in" flag in storage can be set
+//  by anyone with devtools. Client code cannot protect data.
+//
+//  What this module IS: a real session flow against a server that does
+//  the checking. signIn() posts credentials to NEXT_PUBLIC_ADMIN_AUTH_API
+//  and keeps the returned token for the tab. The orders API is expected to
+//  reject requests without it. The security lives on the server.
+//
+//  Three deployments that are actually safe, in order of effort:
+//
+//   1. Host-level password. Cloudflare Access, Netlify password protection
+//      or Vercel deployment protection in front of /admin. Zero code, and
+//      it is the right answer for a single shop.
+//   2. Separate private deployment. Build the counter app with
+//      NEXT_PUBLIC_ENABLE_ADMIN=true onto a host with auth, and leave it
+//      out of the public GitHub Pages build entirely (the default).
+//   3. Real auth provider. Move off static export, add Auth.js/Clerk and
+//      a server route, and point NEXT_PUBLIC_ADMIN_AUTH_API at it.
+//
+//  Publishing this page on GitHub Pages, with or without a login screen,
+//  exposes customer names and phone numbers. Do not do it.
+// ─────────────────────────────────────────────────────────────
+
+const TOKEN_KEY = "katy-bazaar-counter-token";
+
+export type SignInResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
+export function authConfigured(): boolean {
+  return Boolean(process.env.NEXT_PUBLIC_ADMIN_AUTH_API);
+}
+
+export function getToken(): string | null {
+  try {
+    return sessionStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function hasSession(): boolean {
+  return getToken() !== null;
+}
+
+export function signOut(): void {
+  try {
+    sessionStorage.removeItem(TOKEN_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+export async function signIn(email: string, password: string): Promise<SignInResult> {
+  const endpoint = process.env.NEXT_PUBLIC_ADMIN_AUTH_API;
+
+  // Refuse rather than pretend. No endpoint means no way to verify anyone,
+  // and letting them through would be the dangerous failure mode.
+  if (!endpoint) {
+    return {
+      ok: false,
+      message:
+        "Sign-in is not configured. NEXT_PUBLIC_ADMIN_AUTH_API must point at a server that verifies credentials — the browser cannot do it. See src/lib/admin/auth.ts.",
+    };
+  }
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    if (res.status === 401 || res.status === 403) {
+      return { ok: false, message: "That email and password did not match." };
+    }
+    if (!res.ok) {
+      return { ok: false, message: `Sign-in service returned ${res.status}.` };
+    }
+    const data = (await res.json()) as { token?: string };
+    if (!data.token) {
+      return { ok: false, message: "Sign-in succeeded but no session token was returned." };
+    }
+    try {
+      sessionStorage.setItem(TOKEN_KEY, data.token);
+    } catch {
+      return { ok: false, message: "Could not start a session — browser storage is unavailable." };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, message: "Could not reach the sign-in service." };
+  }
+}
+
+/** Authorization header for the orders API, when a session exists. */
+export function authHeaders(): Record<string, string> {
+  const t = getToken();
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}

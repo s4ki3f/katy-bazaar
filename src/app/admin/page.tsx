@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 import { money } from "@/lib/format";
 import { products } from "@/lib/products";
 import {
-  getOrderStore, isLocalOnly, LocalOrderStore,
+  getOrderStore, isLocalOnly, LocalOrderStore, adminEnabled,
   type CounterOrder, type OrderStatus, type PickState,
 } from "@/lib/admin/store";
+import { authConfigured, hasSession, signOut } from "@/lib/admin/auth";
 import { settleOrder, settledLineTotal, lineIsWeighed } from "@/lib/admin/totals";
 
 const STATUSES: { id: OrderStatus; label: string; next?: OrderStatus; cta?: string }[] = [
@@ -16,7 +18,48 @@ const STATUSES: { id: OrderStatus; label: string; next?: OrderStatus; cta?: stri
   { id: "collected", label: "Collected" },
 ];
 
+/** sessionStorage is external mutable state; useSyncExternalStore reads it
+ *  without a setState-in-effect and gives a correct server snapshot. */
+const noopSubscribe = () => () => {};
+
 export default function CounterPage() {
+  const enabled = adminEnabled();
+  const router = useRouter();
+  const authed = useSyncExternalStore(
+    noopSubscribe,
+    () => !authConfigured() || hasSession(),
+    () => false,
+  );
+
+  // When sign-in is wired up, no session means no order data is fetched at all.
+  useEffect(() => {
+    if (enabled && authConfigured() && !hasSession()) router.replace("/admin/login");
+  }, [enabled, router]);
+
+  if (!enabled) return <AdminDisabled />;
+  if (!authed) return <p className="mx-auto max-w-md px-6 py-24 text-center text-muted-foreground">Checking your session…</p>;
+
+  return <Counter />;
+}
+
+function AdminDisabled() {
+  return (
+    <div className="mx-auto max-w-lg px-6 py-24 text-center">
+      <h1 className="font-display text-2xl font-bold">Counter app is not enabled here</h1>
+      <p className="mt-3 text-sm text-muted-foreground">
+        This build does not include the order screens. A static export cannot authenticate anyone,
+        so publishing them would expose customer names and phone numbers to anyone with the URL.
+      </p>
+      <p className="mt-3 text-sm text-muted-foreground">
+        Deploy the counter app separately with <code className="font-mono">NEXT_PUBLIC_ENABLE_ADMIN=true</code>{" "}
+        onto a host that can put a login in front of it.
+      </p>
+    </div>
+  );
+}
+
+function Counter() {
+  const router = useRouter();
   const store = useMemo(() => getOrderStore(), []);
   const [orders, setOrders] = useState<CounterOrder[]>([]);
   const [tab, setTab] = useState<OrderStatus>("new");
@@ -101,6 +144,7 @@ export default function CounterPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-8">
+      {!authConfigured() && (
       <div className="rounded-card border-2 border-destructive bg-destructive/5 p-4 print:hidden">
         <p className="font-display font-bold text-destructive">This page is not protected</p>
         <p className="mt-1 text-sm text-foreground/80">
@@ -110,6 +154,7 @@ export default function CounterPage() {
           private deployment.
         </p>
       </div>
+      )}
 
       <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -128,6 +173,14 @@ export default function CounterPage() {
           <button onClick={() => void refresh()} className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-muted cursor-pointer">
             Refresh
           </button>
+          {authConfigured() && (
+            <button
+              onClick={() => { signOut(); router.replace("/admin/login"); }}
+              className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-muted cursor-pointer"
+            >
+              Sign out
+            </button>
+          )}
         </div>
       </div>
 

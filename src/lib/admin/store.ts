@@ -17,6 +17,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import type { Order, OrderLine } from "@/lib/order";
+import { authHeaders } from "./auth";
 
 export type OrderStatus = "new" | "picking" | "ready" | "collected";
 
@@ -82,7 +83,7 @@ export class LocalOrderStore implements OrderStore {
 export class ApiOrderStore implements OrderStore {
   constructor(private base: string) {}
   async list(): Promise<CounterOrder[]> {
-    const res = await fetch(this.base, { headers: { Accept: "application/json" } });
+    const res = await fetch(this.base, { headers: { Accept: "application/json", ...authHeaders() } });
     if (!res.ok) throw new Error(`Orders API returned ${res.status}`);
     const data = (await res.json()) as (Order | CounterOrder)[];
     return data.map((o) => ("status" in o ? (o as CounterOrder) : toCounterOrder(o as Order)));
@@ -90,12 +91,21 @@ export class ApiOrderStore implements OrderStore {
   async save(order: CounterOrder): Promise<void> {
     const res = await fetch(`${this.base}/${encodeURIComponent(order.reference)}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify(order),
     });
     if (!res.ok) throw new Error(`Orders API returned ${res.status}`);
   }
 }
+
+/**
+ * The counter app is excluded from the public build unless this is set.
+ * A static export cannot authenticate anyone, so shipping the order UI to
+ * GitHub Pages would expose customer names and phone numbers to anyone
+ * with the URL. Real deployments set NEXT_PUBLIC_ENABLE_ADMIN=true on a
+ * host that can put a login in front of it.
+ */
+export const adminEnabled = () => process.env.NEXT_PUBLIC_ENABLE_ADMIN === "true";
 
 export function getOrderStore(): OrderStore {
   const base = process.env.NEXT_PUBLIC_ORDERS_API;
