@@ -66,13 +66,13 @@ export default function CartPage() {
                       {isWeighed(product) && <span className="ml-1 text-primary">· qty = lb</span>}
                     </p>
                   </div>
-                  <button onClick={() => remove(product.id)} aria-label={`Remove ${product.name}`} className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:bg-muted hover:text-destructive cursor-pointer inline-flex items-center justify-center">
+                  <button onClick={() => remove(product.id)} aria-label={`Remove ${product.name}`} className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:bg-muted hover:text-destructive cursor-pointer inline-flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring">
                     <TrashIcon width={18} height={18} />
                   </button>
                 </div>
                 <div className="mt-auto flex items-center justify-between pt-3">
                   <div className="inline-flex items-center rounded-full border border-border">
-                    <button onClick={() => setQty(product.id, qty - 1)} className="flex h-9 w-9 items-center justify-center rounded-l-full hover:bg-muted cursor-pointer" aria-label="Decrease quantity">
+                    <button onClick={() => setQty(product.id, qty - 1)} className="flex h-9 w-9 items-center justify-center rounded-l-full hover:bg-muted cursor-pointer focus-visible:ring-2 focus-visible:ring-ring" aria-label={`Decrease quantity of ${product.name}`}>
                       <MinusIcon width={16} height={16} />
                     </button>
                     <span className="inline-flex w-12 items-baseline justify-center overflow-hidden text-sm font-semibold">
@@ -89,7 +89,7 @@ export default function CartPage() {
                       </AnimatePresence>
                       {isWeighed(product) && <span className="ml-0.5 text-xs font-normal text-muted-foreground">lb</span>}
                     </span>
-                    <button onClick={() => setQty(product.id, qty + 1)} className="flex h-9 w-9 items-center justify-center rounded-r-full hover:bg-muted cursor-pointer" aria-label="Increase quantity">
+                    <button onClick={() => setQty(product.id, qty + 1)} className="flex h-9 w-9 items-center justify-center rounded-r-full hover:bg-muted cursor-pointer focus-visible:ring-2 focus-visible:ring-ring" aria-label={`Increase quantity of ${product.name}`}>
                       <PlusIcon width={16} height={16} />
                     </button>
                   </div>
@@ -105,7 +105,7 @@ export default function CartPage() {
                       <select
                         value={cut ?? ""}
                         onChange={(e) => setCut(product.id, e.target.value)}
-                        className="cursor-pointer bg-transparent text-xs font-semibold outline-none"
+                        className="cursor-pointer rounded bg-transparent text-xs font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                       >
                         <option value="">Cut: butcher&apos;s choice</option>
                         {CUT_OPTIONS.map((c) => (
@@ -118,11 +118,18 @@ export default function CartPage() {
                     type="button"
                     onClick={() => setAllowSub(product.id, !allowSub)}
                     aria-pressed={allowSub}
-                    className={`inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+                    className={`inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
                       allowSub ? "border-border text-muted-foreground hover:border-primary/40" : "border-primary bg-primary/5 text-primary"
                     }`}
                   >
-                    {allowSub ? "Substitutions ok" : "No substitutions"}
+                    Allow substitutions
+                    <span className="sr-only"> for {product.name}</span>
+                    <span
+                      aria-hidden
+                      className={`inline-block h-3.5 w-6 rounded-full transition-colors ${allowSub ? "bg-primary" : "bg-border"}`}
+                    >
+                      <span className={`block h-2.5 w-2.5 rounded-full bg-white transition-transform ${allowSub ? "translate-x-3" : "translate-x-0.5"} mt-0.5`} />
+                    </span>
                   </button>
                 </div>
               </div>

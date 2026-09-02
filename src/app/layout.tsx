@@ -39,10 +39,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${rubik.variable} ${nunito.variable}`}>
       <body>
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:font-semibold focus:text-on-primary"
+        >
+          Skip to main content
+        </a>
         <CartProvider>
           <MotionProvider>
           <Header />
-          <main className="min-h-[60vh]">{children}</main>
+          <main id="main" tabIndex={-1} className="min-h-[60vh]">{children}</main>
           <Footer />
           </MotionProvider>
         </CartProvider>

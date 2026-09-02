@@ -151,8 +151,14 @@ export default function CheckoutPage() {
               </div>
             </div>
             <div className="mt-5">
-              <p className="mb-2 text-sm font-medium text-foreground/80">Choose a pickup time</p>
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <p id="pickup-time-label" className="mb-2 text-sm font-medium text-foreground/80">Choose a pickup time</p>
+              {/*
+                Deliberately aria-pressed toggle buttons rather than a radiogroup:
+                a radiogroup sets an expectation of arrow-key roving focus, and
+                promising that without implementing it is worse than plain
+                buttons that each report their own state.
+              */}
+              <div role="group" aria-labelledby="pickup-time-label" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {slots.slice(0, 9).map((s) => {
                   const full = s.remaining === 0;
                   return (
@@ -161,8 +167,10 @@ export default function CheckoutPage() {
                       type="button"
                       disabled={full}
                       onClick={() => setSlotId(s.id)}
+                      aria-pressed={slotId === s.id}
+                      aria-label={`Pickup ${s.dayLabel}, ${s.timeLabel}${full ? ", full" : ""}`}
                       whileTap={full ? undefined : { scale: 0.97 }}
-                      className={`relative rounded-lg border-2 px-3 py-2.5 text-left transition-colors ${
+                      className={`relative rounded-lg border-2 px-3 py-2.5 text-left transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                         full
                           ? "cursor-not-allowed border-border opacity-50"
                           : slotId === s.id
@@ -205,15 +213,16 @@ export default function CheckoutPage() {
 
           {/* payment */}
           <section className="rounded-card border border-border bg-surface p-6">
-            <h2 className="font-display text-lg font-bold">Payment</h2>
-            <div className="mt-4 grid grid-cols-2 gap-3">
+            <h2 id="payment-label" className="font-display text-lg font-bold">Payment</h2>
+            <div role="group" aria-labelledby="payment-label" className="mt-4 grid grid-cols-2 gap-3">
               {(["cash", "card"] as Payment[]).map((p) => (
                 <motion.button
                   key={p}
                   type="button"
                   onClick={() => setPayment(p)}
+                  aria-pressed={payment === p}
                   whileTap={{ scale: 0.98 }}
-                  className={`relative rounded-lg border-2 p-4 text-left transition-colors cursor-pointer ${
+                  className={`relative rounded-lg border-2 p-4 text-left transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                     payment === p ? "border-transparent" : "border-border hover:border-primary/40"
                   }`}
                 >
@@ -287,7 +296,7 @@ export default function CheckoutPage() {
               {submitting ? "Sending…" : `Place pickup order · ${money(total)}`}
             </button>
             {submitError && (
-              <p className="mt-3 rounded-lg bg-destructive/10 p-3 text-xs text-destructive">{submitError}</p>
+              <p role="alert" className="mt-3 rounded-lg bg-destructive/10 p-3 text-xs text-destructive">{submitError}</p>
             )}
             <p className="mt-3 text-center text-xs text-muted-foreground">
               You pay at the counter when you collect. Nothing is charged now.

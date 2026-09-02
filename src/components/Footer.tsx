@@ -15,7 +15,7 @@ export function Footer() {
         </div>
 
         <div>
-          <h4 className="font-display text-sm font-bold uppercase tracking-wide text-white">Shop</h4>
+          <h3 className="font-display text-sm font-bold uppercase tracking-wide text-white">Shop</h3>
           <ul className="mt-4 space-y-2 text-sm">
             {categories.slice(0, 6).map((c) => (
               <li key={c.slug}>
@@ -28,7 +28,7 @@ export function Footer() {
         </div>
 
         <div>
-          <h4 className="font-display text-sm font-bold uppercase tracking-wide text-white">Company</h4>
+          <h3 className="font-display text-sm font-bold uppercase tracking-wide text-white">Company</h3>
           <ul className="mt-4 space-y-2 text-sm">
             <li><Link href="/about" className="text-white/60 hover:text-white">About Us</Link></li>
             <li><Link href="/shop" className="text-white/60 hover:text-white">All Products</Link></li>
@@ -38,7 +38,7 @@ export function Footer() {
         </div>
 
         <div>
-          <h4 className="font-display text-sm font-bold uppercase tracking-wide text-white">Visit Us</h4>
+          <h3 className="font-display text-sm font-bold uppercase tracking-wide text-white">Visit Us</h3>
           <ul className="mt-4 space-y-3 text-sm text-white/60">
             <li className="flex gap-2.5">
               <PinIcon width={18} height={18} className="mt-0.5 shrink-0 text-secondary" />
