@@ -83,9 +83,26 @@ export const site = {
   halalCertifier: null as null | { name: string; certificateUrl?: string },
 } as const;
 
-/** True while site.config still holds the scaffolded placeholder values. */
-export const contactIsPlaceholder =
-  site.phone.includes("000-0000") || site.address.line1.toLowerCase().includes("placeholder");
+/**
+ * The scaffold shipped a fake phone number and street address. Rendering
+ * them is worse than rendering nothing: a customer taps the number and
+ * dials a stranger, or drives to an address that does not exist. Until
+ * the real values are in, every surface omits them and shows only what is
+ * true — the city, state and ZIP.
+ */
+export const phoneIsPlaceholder = /0{3}-?0{4}|000-0000/.test(site.phone);
+export const addressIsPlaceholder =
+  site.address.line1.toLowerCase().includes("placeholder") || /^0+\s/.test(site.address.line1);
+export const contactIsPlaceholder = phoneIsPlaceholder || addressIsPlaceholder;
+
+/** What is safe to print today: the full address, or just the locality. */
+export const addressLines = (): string[] =>
+  addressIsPlaceholder
+    ? [`${site.address.city}, ${site.address.state} ${site.address.zip}`]
+    : [
+        `${site.address.line1}${site.address.line2 ? `, ${site.address.line2}` : ""}`,
+        `${site.address.city}, ${site.address.state} ${site.address.zip}`,
+      ];
 
 
 /**

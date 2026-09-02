@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { site } from "@/lib/site.config";
+import { site, phoneIsPlaceholder, addressIsPlaceholder, addressLines } from "@/lib/site.config";
 import { PhoneIcon, PinIcon, ClockIcon } from "@/components/icons";
 import { ContactForm } from "@/components/ContactForm";
 
@@ -24,11 +24,15 @@ export default function ContactPage() {
 
         <aside className="space-y-4">
           <InfoCard icon={<PinIcon width={22} height={22} />} title="Visit the store">
-            {site.address.line1}, {site.address.line2}<br />
-            {site.address.city}, {site.address.state} {site.address.zip}
+            {addressLines().map((l, i) => <span key={l}>{i > 0 && <br />}{l}</span>)}
+            {addressIsPlaceholder && (
+              <><br /><span className="text-xs">Street address published shortly — message us on WhatsApp and we&apos;ll send directions.</span></>
+            )}
           </InfoCard>
           <InfoCard icon={<PhoneIcon width={22} height={22} />} title="Call or WhatsApp">
-            <a href={`tel:${site.phone.replace(/[^0-9+]/g, "")}`} className="hover:text-primary">{site.phone}</a><br />
+            {phoneIsPlaceholder
+              ? <span>Phone number coming soon</span>
+              : <a href={`tel:${site.phone.replace(/[^0-9+]/g, "")}`} className="hover:text-primary">{site.phone}</a>}<br />
             <a href={`mailto:${site.email}`} className="hover:text-primary">{site.email}</a>
           </InfoCard>
           <InfoCard icon={<ClockIcon width={22} height={22} />} title="Store hours">

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { useCart } from "@/context/CartContext";
 import { categories } from "@/lib/products";
-import { site } from "@/lib/site.config";
+import { site, phoneIsPlaceholder } from "@/lib/site.config";
 import { asset } from "@/lib/asset";
 import { CartIcon, MenuIcon, CloseIcon, PhoneIcon } from "./icons";
 
@@ -55,12 +55,14 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-1.5">
+          {!phoneIsPlaceholder && (
           <a
             href={`tel:${site.phone.replace(/[^0-9+]/g, "")}`}
             className="hidden items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-foreground/80 hover:bg-muted sm:inline-flex"
           >
             <PhoneIcon width={18} height={18} /> {site.phone}
           </a>
+          )}
 
           <Link
             href="/cart"
