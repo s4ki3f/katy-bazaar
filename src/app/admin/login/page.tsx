@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { signIn, authConfigured } from "@/lib/admin/auth";
+import { signIn, authConfigured, devSignInAvailable } from "@/lib/admin/auth";
 import { adminEnabled } from "@/lib/admin/store";
 import { site } from "@/lib/site.config";
 
@@ -36,7 +36,7 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const configured = authConfigured();
+  const configured = authConfigured() || devSignInAvailable();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -65,6 +65,20 @@ function LoginForm() {
         <p className="mt-2 text-sm text-muted-foreground">
           For staff. Customer orders are behind this.
         </p>
+
+        {devSignInAvailable() && (
+          <div className="mt-5 rounded-lg border border-border bg-muted p-4">
+            <p className="font-display text-sm font-bold">Development sign-in</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              No auth server is running, so these local accounts are active. They exist only in a dev
+              build — <code className="font-mono">next build</code> compiles them out.
+            </p>
+            <ul className="mt-2 space-y-0.5 font-mono text-xs">
+              <li>admin@dev.com / admin</li>
+              <li>staff@dev.com / staff</li>
+            </ul>
+          </div>
+        )}
 
         {!configured && (
           <div className="mt-5 rounded-lg border-2 border-destructive bg-destructive/5 p-4">

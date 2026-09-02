@@ -31,6 +31,38 @@
 // ─────────────────────────────────────────────────────────────
 
 const TOKEN_KEY = "katy-bazaar-counter-token";
+const ROLE_KEY = "katy-bazaar-counter-role";
+
+export type Role = "admin" | "staff";
+
+/**
+ * DEVELOPMENT-ONLY sign-in.
+ *
+ * These let the team click through the counter app without standing up an
+ * auth server. They are deliberately fenced behind NODE_ENV !== production:
+ * a `next build` compiles the branch out, so a shipped bundle contains no
+ * usable credentials and still refuses to let anyone in without a real
+ * NEXT_PUBLIC_ADMIN_AUTH_API.
+ *
+ * Never add a real account here. Credentials checked in the browser are
+ * readable by anyone who opens devtools.
+ */
+const DEV_ACCOUNTS: Record<string, { password: string; role: Role }> = {
+  "admin@dev.com": { password: "admin", role: "admin" },
+  "staff@dev.com": { password: "staff", role: "staff" },
+};
+
+export const devSignInAvailable = () =>
+  process.env.NODE_ENV !== "production" && !process.env.NEXT_PUBLIC_ADMIN_AUTH_API;
+
+export function getRole(): Role | null {
+  try {
+    const r = sessionStorage.getItem(ROLE_KEY);
+    return r === "admin" || r === "staff" ? r : null;
+  } catch {
+    return null;
+  }
+}
 
 export type SignInResult =
   | { ok: true }
@@ -55,6 +87,7 @@ export function hasSession(): boolean {
 export function signOut(): void {
   try {
     sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(ROLE_KEY);
   } catch {
     /* ignore */
   }
@@ -62,6 +95,22 @@ export function signOut(): void {
 
 export async function signIn(email: string, password: string): Promise<SignInResult> {
   const endpoint = process.env.NEXT_PUBLIC_ADMIN_AUTH_API;
+
+  // Local development: named accounts so the team can walk the flow.
+  // This branch does not exist in a production build.
+  if (!endpoint && devSignInAvailable()) {
+    const account = DEV_ACCOUNTS[email.trim().toLowerCase()];
+    if (!account || account.password !== password) {
+      return { ok: false, message: "That email and password did not match." };
+    }
+    try {
+      sessionStorage.setItem(TOKEN_KEY, `dev.${account.role}`);
+      sessionStorage.setItem(ROLE_KEY, account.role);
+    } catch {
+      return { ok: false, message: "Could not start a session — browser storage is unavailable." };
+    }
+    return { ok: true };
+  }
 
   // Refuse rather than pretend. No endpoint means no way to verify anyone,
   // and letting them through would be the dangerous failure mode.
@@ -85,12 +134,13 @@ export async function signIn(email: string, password: string): Promise<SignInRes
     if (!res.ok) {
       return { ok: false, message: `Sign-in service returned ${res.status}.` };
     }
-    const data = (await res.json()) as { token?: string };
+    const data = (await res.json()) as { token?: string; role?: Role };
     if (!data.token) {
       return { ok: false, message: "Sign-in succeeded but no session token was returned." };
     }
     try {
       sessionStorage.setItem(TOKEN_KEY, data.token);
+      if (data.role === "admin" || data.role === "staff") sessionStorage.setItem(ROLE_KEY, data.role);
     } catch {
       return { ok: false, message: "Could not start a session — browser storage is unavailable." };
     }

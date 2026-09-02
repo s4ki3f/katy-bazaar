@@ -65,6 +65,19 @@ export const contactIsPlaceholder =
   site.phone.includes("000-0000") || site.address.line1.toLowerCase().includes("placeholder");
 
 
+/**
+ * Specials shown in the scrolling banner. Edit this list — no code change
+ * needed. Put the dates in the text; the banner itself runs all week.
+ */
+export const weekendOffers: { label: string; text: string }[] = [
+  { label: "Weekend special", text: "Goat curry cut — $8.99/lb, Fri–Sun only" },
+  { label: "Fresh", text: "Whole chicken cleaned & cut free of charge" },
+  { label: "Bundle", text: "2 lb keema + 2 lb boti — $32, save $6" },
+  { label: "In season", text: "Fresh cilantro & green chilies in every morning" },
+  { label: "Weekend special", text: "Lamb loin chops down to $12.99/lb" },
+];
+
+
 export const valueProps = [
   {
     title: "100% Zabihah Halal",

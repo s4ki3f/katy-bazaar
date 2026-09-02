@@ -69,6 +69,18 @@ h1, h2, h3, h4, .font-display {
   }
 }
 
+/* Weekend-offer marquee. A CSS animation (not a JS one) so it can be
+   paused with animation-play-state, which is what WCAG 2.2.2 needs. */
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee-scroll 34s linear infinite;
+  will-change: transform;
+}
+.marquee-track[data-paused="true"] { animation-play-state: paused; }
+
 /* Utility: hide scrollbar for horizontal category rails */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

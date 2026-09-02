@@ -3,6 +3,7 @@ import { Rubik, Nunito_Sans } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { MotionProvider } from "@/components/MotionProvider";
+import { OfferMarquee } from "@/components/OfferMarquee";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { site } from "@/lib/site.config";
@@ -48,7 +49,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CartProvider>
           <MotionProvider>
           <Header />
-          <main id="main" tabIndex={-1} className="min-h-[60vh]">{children}</main>
+          <OfferMarquee />
+            <main id="main" tabIndex={-1} className="min-h-[60vh]">{children}</main>
           <Footer />
           </MotionProvider>
         </CartProvider>

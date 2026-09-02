@@ -8,7 +8,7 @@ import {
   getOrderStore, isLocalOnly, LocalOrderStore, adminEnabled,
   type CounterOrder, type OrderStatus, type PickState,
 } from "@/lib/admin/store";
-import { authConfigured, hasSession, signOut } from "@/lib/admin/auth";
+import { authConfigured, devSignInAvailable, getRole, hasSession, signOut } from "@/lib/admin/auth";
 import { settleOrder, settledLineTotal, lineIsWeighed } from "@/lib/admin/totals";
 
 const STATUSES: { id: OrderStatus; label: string; next?: OrderStatus; cta?: string }[] = [
@@ -27,13 +27,13 @@ export default function CounterPage() {
   const router = useRouter();
   const authed = useSyncExternalStore(
     noopSubscribe,
-    () => !authConfigured() || hasSession(),
+    () => !(authConfigured() || devSignInAvailable()) || hasSession(),
     () => false,
   );
 
   // When sign-in is wired up, no session means no order data is fetched at all.
   useEffect(() => {
-    if (enabled && authConfigured() && !hasSession()) router.replace("/admin/login");
+    if (enabled && (authConfigured() || devSignInAvailable()) && !hasSession()) router.replace("/admin/login");
   }, [enabled, router]);
 
   if (!enabled) return <AdminDisabled />;
@@ -60,6 +60,7 @@ function AdminDisabled() {
 
 function Counter() {
   const router = useRouter();
+  const role = getRole();
   const store = useMemo(() => getOrderStore(), []);
   const [orders, setOrders] = useState<CounterOrder[]>([]);
   const [tab, setTab] = useState<OrderStatus>("new");
@@ -155,7 +156,7 @@ function Counter() {
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-8">
-      {!authConfigured() && (
+      {!(authConfigured() || devSignInAvailable()) && (
       <div className="rounded-card border-2 border-destructive bg-destructive/5 p-4 print:hidden">
         <p className="font-display font-bold text-destructive">This page is not protected</p>
         <p className="mt-1 text-sm text-foreground/80">
@@ -169,14 +170,21 @@ function Counter() {
 
       <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl font-bold">Counter</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl font-bold">Counter</h1>
+            {role && (
+              <span className="rounded-full border border-border bg-muted px-3 py-1 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                {role}
+              </span>
+            )}
+          </div>
           <p className="mt-1 text-sm text-muted-foreground">
             Pickup orders, in the order they came in.
             {isLocalOnly() && " Storing locally in this browser — set NEXT_PUBLIC_ORDERS_API to share across devices."}
           </p>
         </div>
         <div className="flex gap-2 print:hidden">
-          {isLocalOnly() && (
+          {isLocalOnly() && role !== "staff" && (
             <button onClick={seedDemo} className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-muted cursor-pointer">
               Add sample order
             </button>
@@ -184,7 +192,7 @@ function Counter() {
           <button onClick={() => void refresh()} className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-muted cursor-pointer">
             Refresh
           </button>
-          {authConfigured() && (
+          {(authConfigured() || devSignInAvailable()) && (
             <button
               onClick={() => { signOut(); router.replace("/admin/login"); }}
               className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-muted cursor-pointer"
