@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "dev:counter": "NEXT_PUBLIC_ENABLE_ADMIN=true next dev",
+    "build:counter": "NEXT_PUBLIC_ENABLE_ADMIN=true next build"
   },
   "dependencies": {
     "motion": "^13.2.0",
