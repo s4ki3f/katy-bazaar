@@ -119,3 +119,49 @@ app. This takes precedence over WhatsApp when set.
 shop is no longer limited to one browser.
 
 See `.env.example` for every variable.
+
+## Deploying to Vercel
+
+The same codebase builds two ways. Vercel sets `VERCEL=1`, which switches
+off the static export and the `/katy-bazaar` base path automatically — no
+config edit, and the GitHub Pages workflow keeps working untouched.
+
+```bash
+npm i -g vercel
+vercel login
+vercel link          # once, from this directory
+vercel               # preview deployment
+vercel --prod        # production, after checking the preview
+```
+
+### Environment variables to set in the Vercel dashboard
+
+Project → Settings → Environment Variables. None of these are
+`NEXT_PUBLIC_`, so they never reach the browser bundle.
+
+| Variable | Purpose |
+|---|---|
+| `NEXT_PUBLIC_ENABLE_ADMIN` | `true` to include the counter app in the build |
+| `NEXT_PUBLIC_ADMIN_AUTH_API` | `/api/auth` — makes the counter login real |
+| `COUNTER_SESSION_SECRET` | long random string; signs session tokens |
+| `COUNTER_ADMIN_EMAIL` / `COUNTER_ADMIN_PASSWORD` | admin account |
+| `COUNTER_STAFF_EMAIL` / `COUNTER_STAFF_PASSWORD` | staff account |
+
+Generate a secret with `openssl rand -base64 32`.
+
+### Protect /admin
+
+Even with the login above, add **Vercel Deployment Protection** (Project →
+Settings → Deployment Protection) in front of the deployment. Two locks are
+better than one for a page holding customer names and phone numbers, and it
+costs no code.
+
+### Why bother moving off Pages
+
+- Real server-side auth — no credentials in the browser bundle at all.
+- API routes, so `NEXT_PUBLIC_ORDERS_API` and `NEXT_PUBLIC_INVENTORY_API`
+  can be served from this same project and the counter stops being
+  one-browser-only.
+- Image optimisation, which GitHub Pages cannot do.
+- `katybazaar.com` is already registered and currently points nowhere —
+  attach it here instead of a github.io URL.
