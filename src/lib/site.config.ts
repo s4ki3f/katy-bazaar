@@ -11,15 +11,20 @@ export const site = {
   description:
     "Zabihah halal meat cut fresh daily, plus South Asian, Middle Eastern & everyday groceries. Serving the Katy community.",
 
-  // TODO: confirm real values
-  phone: "(281) 000-0000",
+  // Address and phone taken from the store's own Facebook page
+  // (facebook.com/people/Katy-Bazaar-Halal-meat/61572351023110). The ZIP is
+  // 77450 — 1717 S Mason Rd sits in 77450, not the 77494 the scaffold
+  // assumed; corroborated against commercial listings for that building.
+  // No suite number is published, so line2 is intentionally empty.
+  // TODO: confirm the email — it is still the scaffold value.
+  phone: "(936) 463-1811",
   email: "hello@katybazaar.com",
   address: {
-    line1: "0000 Placeholder Blvd",
-    line2: "Suite 000",
+    line1: "1717 S Mason Rd",
+    line2: "",
     city: "Katy",
     state: "TX",
-    zip: "77494",
+    zip: "77450",
   },
 
   hours: [
