@@ -44,11 +44,12 @@ export const site = {
      * country code, no spaces or symbols. US example:
      *   https://wa.me/12815551234
      *
-     * Currently set to 281-555-0100, which is inside the NANP block
-     * reserved for fictional use (555-0100 to 555-0199). It is a
-     * placeholder, it is detected as one, and a production build treats
-     * it as "no destination configured". Note that 555-1234 is NOT in
-     * the reserved block and could belong to a real subscriber.
+     * Set to the store's real number, confirmed by the owner as being on
+     * WhatsApp. Orders now reach the shop.
+     *
+     * Placeholders (the 555-0100..555-0199 reserved block, and the old
+     * scaffold value) are still detected and refused in production, so
+     * this cannot silently regress to a dead destination.
      *
      * With a real number here, placing an order opens WhatsApp with the
      * whole order pre-filled and the shop receives it. That is the
@@ -59,7 +60,7 @@ export const site = {
      * which takes precedence when set. Until one of the two exists,
      * checkout refuses to confirm rather than pretend the order arrived.
      */
-    whatsapp: "https://wa.me/12815550100",
+    whatsapp: "https://wa.me/19364631811",
   },
 
   // Storefront settings
