@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import { useCart } from "@/context/CartContext";
 import { site, contactIsPlaceholder } from "@/lib/site.config";
 import { money } from "@/lib/format";
@@ -213,7 +213,8 @@ export default function CheckoutPage() {
 
           {/* payment */}
           <section className="rounded-card border border-border bg-surface p-6">
-            <h2 id="payment-label" className="font-display text-lg font-bold">Payment</h2>
+            <h2 id="payment-label" className="font-display text-lg font-bold">How will you pay at pickup?</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Helps us have your receipt ready. Nothing is charged now.</p>
             <div role="group" aria-labelledby="payment-label" className="mt-4 grid grid-cols-2 gap-3">
               {(["cash", "card"] as Payment[]).map((p) => (
                 <motion.button
@@ -233,26 +234,15 @@ export default function CheckoutPage() {
                       className="pointer-events-none absolute inset-0 rounded-lg border-2 border-primary bg-primary/5"
                     />
                   )}
-                  <span className="relative font-display font-semibold">{p === "cash" ? "Cash at Pickup" : "Card"}</span>
-                  <span className="relative mt-0.5 block text-xs text-muted-foreground">{p === "cash" ? "Pay in-store when you collect" : "Card presented at the counter"}</span>
+                  <span className="relative font-display font-semibold">{p === "cash" ? "Cash" : "Card"}</span>
+                  <span className="relative mt-0.5 block text-xs text-muted-foreground">{p === "cash" ? "Paying cash at the counter" : "Paying by card at the counter"}</span>
                 </motion.button>
               ))}
             </div>
-            <AnimatePresence initial={false}>
-            {payment === "card" && (
-              <motion.div
-                key="cardfields"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="mt-4 grid gap-4 overflow-hidden sm:grid-cols-2"
-              >
-                <Field label="Card number" className="sm:col-span-2"><input className={inputCls} placeholder="4242 4242 4242 4242" inputMode="numeric" /></Field>
-                <Field label="Expiry"><input className={inputCls} placeholder="MM/YY" /></Field>
-                <Field label="CVC"><input className={inputCls} placeholder="123" inputMode="numeric" /></Field>
-              </motion.div>
-            )}
-            </AnimatePresence>
+            <p className="mt-4 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
+              No payment is taken online. You settle the full amount at the counter when you
+              collect — we accept cash and all major cards in store.
+            </p>
           </section>
         </div>
 
