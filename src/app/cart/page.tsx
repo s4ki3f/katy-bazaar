@@ -176,7 +176,7 @@ export default function CartPage() {
             <Link href="/checkout" className="mt-5 flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 font-semibold text-on-primary transition-colors hover:bg-primary-dark">
               Checkout <ArrowIcon width={18} height={18} />
             </Link>
-            <p className="mt-3 text-center text-xs text-muted-foreground">Secure checkout · Pay in cash or card at pickup</p>
+            <p className="mt-3 text-center text-xs text-muted-foreground">Order ahead · Collect and settle up at the counter</p>
           </div>
         </motion.aside>
       </div>

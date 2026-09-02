@@ -31,7 +31,6 @@ export type Order = {
   customer: { name: string; phone: string; email: string };
   pickupSlot: string;
   notes?: string;
-  paymentPreference: "cash" | "card";
   lines: OrderLine[];
   subtotal: number;
   tax: number;
@@ -43,8 +42,13 @@ export type SubmitResult =
   | { ok: true; via: "endpoint" | "whatsapp" }
   | { ok: false; via: "unconfigured" | "error"; message: string };
 
+/**
+ * Short, human-readable pickup ID. The customer reads it out at the
+ * counter, so it is grouped for legibility: KB-482 193.
+ */
 export function orderReference(seed: number = Date.now()): string {
-  return "KB-" + String(seed).slice(-6);
+  const digits = String(seed).slice(-6);
+  return `KB-${digits.slice(0, 3)} ${digits.slice(3)}`;
 }
 
 export function orderToText(o: Order): string {
@@ -58,7 +62,8 @@ export function orderToText(o: Order): string {
     .join("\n");
 
   return [
-    `New pickup order ${o.reference}`,
+    `New pickup order`,
+    `PICKUP ID: ${o.reference}`,
     `${o.customer.name} · ${o.customer.phone}`,
     `Pickup: ${o.pickupSlot}`,
     "",
@@ -68,7 +73,7 @@ export function orderToText(o: Order): string {
     `Tax ${money(o.tax)}`,
     `Total ${money(o.total)}${o.hasWeighedItems ? " (estimate — weighed items settle at the counter)" : ""}`,
     o.notes ? `\nNotes: ${o.notes}` : "",
-    `Paying by ${o.paymentPreference === "cash" ? "cash" : "card"} at pickup.`,
+    `Customer settles at the counter — no payment taken online.`,
   ].join("\n");
 }
 

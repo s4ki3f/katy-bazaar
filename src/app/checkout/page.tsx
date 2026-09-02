@@ -12,11 +12,13 @@ import { getPickupSlots } from "@/lib/slots";
 import { submitOrder, orderReference, type Order } from "@/lib/order";
 import { CheckIcon, ArrowIcon, PinIcon } from "@/components/icons";
 
-type Payment = "cash" | "card";
+/** Money leaves the browser as cents-accurate numbers, never 47.459999999999994. */
+function round2(n: number): number {
+  return Math.round((n + Number.EPSILON) * 100) / 100;
+}
 
 export default function CheckoutPage() {
   const { lines, subtotal, clear, ready } = useCart();
-  const [payment, setPayment] = useState<Payment>("cash");
   const [placed, setPlaced] = useState<string | null>(null);
   const [slotId, setSlotId] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
@@ -24,6 +26,7 @@ export default function CheckoutPage() {
 
   // slots are time-dependent, so compute once per mount (never during render on the server)
   const slots = useMemo(() => getPickupSlots(), []);
+  const chosenSlot = slots.find((s) => s.id === slotId);
 
   if (!ready) return <div className="mx-auto max-w-3xl px-6 py-24 text-center text-muted-foreground">Loading…</div>;
 
@@ -38,14 +41,23 @@ export default function CheckoutPage() {
         >
           <CheckIcon width={34} height={34} />
         </motion.span>
-        <h1 className="mt-5 font-display text-3xl font-bold">Order confirmed!</h1>
-        <p className="mt-2 text-muted-foreground">
-          Thank you for your order. Your pickup confirmation number is{" "}
-          <span className="font-bold text-foreground">{placed}</span>.
+        <h1 className="mt-5 font-display text-3xl font-bold">Order received</h1>
+
+        <p className="mt-6 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          Your pickup ID
         </p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          We&apos;ll have your order bagged and ready for pickup in {site.address.city}. Pay at the
-          counter when you collect — nothing has been charged.
+        <p className="mt-1 font-display text-4xl font-bold tabular-nums tracking-tight text-primary sm:text-5xl">
+          {placed}
+        </p>
+        <p className="mx-auto mt-3 max-w-sm text-sm text-muted-foreground">
+          Show this at the counter and we&apos;ll bring your order out. It&apos;s also in the
+          message we sent, so you don&apos;t need to remember it.
+        </p>
+
+        <p className="mt-6 text-sm text-muted-foreground">
+          Ready for collection in {site.address.city}
+          {chosenSlot ? <> on <span className="font-semibold text-foreground">{chosenSlot.dayLabel}, {chosenSlot.timeLabel}</span></> : null}.
+          You settle up in store — nothing has been charged.
         </p>
         <Link href="/shop" className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-semibold text-on-primary hover:bg-primary-dark">
           Continue shopping <ArrowIcon width={18} height={18} />
@@ -68,7 +80,6 @@ export default function CheckoutPage() {
   const { tax, allExempt } = computeTax(lines);
   const total = subtotal + tax;
   const anyWeighed = lines.some((l) => isWeighed(l.product));
-  const chosenSlot = slots.find((s) => s.id === slotId);
 
   async function placeOrder(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -88,18 +99,17 @@ export default function CheckoutPage() {
       },
       pickupSlot: chosenSlot ? `${chosenSlot.dayLabel}, ${chosenSlot.timeLabel}` : "No preference",
       notes: String(form.get("notes") ?? "") || undefined,
-      paymentPreference: payment,
       lines: lines.map((l) => ({
         name: l.product.name,
         unit: l.product.unit,
         qty: l.qty,
-        lineTotal: l.lineTotal,
+        lineTotal: round2(l.lineTotal),
         cut: l.cut,
         allowSubstitution: l.allowSub,
       })),
-      subtotal,
-      tax,
-      total,
+      subtotal: round2(subtotal),
+      tax: round2(tax),
+      total: round2(total),
       hasWeighedItems: anyWeighed,
     };
 
@@ -211,37 +221,12 @@ export default function CheckoutPage() {
             </div>
           </section>
 
-          {/* payment */}
+          {/* collection — no payment is taken online at all */}
           <section className="rounded-card border border-border bg-surface p-6">
-            <h2 id="payment-label" className="font-display text-lg font-bold">How will you pay at pickup?</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Helps us have your receipt ready. Nothing is charged now.</p>
-            <div role="group" aria-labelledby="payment-label" className="mt-4 grid grid-cols-2 gap-3">
-              {(["cash", "card"] as Payment[]).map((p) => (
-                <motion.button
-                  key={p}
-                  type="button"
-                  onClick={() => setPayment(p)}
-                  aria-pressed={payment === p}
-                  whileTap={{ scale: 0.98 }}
-                  className={`relative rounded-lg border-2 p-4 text-left transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-                    payment === p ? "border-transparent" : "border-border hover:border-primary/40"
-                  }`}
-                >
-                  {payment === p && (
-                    <motion.span
-                      layoutId="tender-selection"
-                      transition={{ type: "spring", stiffness: 480, damping: 38 }}
-                      className="pointer-events-none absolute inset-0 rounded-lg border-2 border-primary bg-primary/5"
-                    />
-                  )}
-                  <span className="relative font-display font-semibold">{p === "cash" ? "Cash" : "Card"}</span>
-                  <span className="relative mt-0.5 block text-xs text-muted-foreground">{p === "cash" ? "Paying cash at the counter" : "Paying by card at the counter"}</span>
-                </motion.button>
-              ))}
-            </div>
-            <p className="mt-4 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-              No payment is taken online. You settle the full amount at the counter when you
-              collect — we accept cash and all major cards in store.
+            <h2 className="font-display text-lg font-bold">Collecting your order</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Bring your pickup ID to the counter and we&apos;ll bring your order out. You settle
+              up in store. Nothing is charged or collected online.
             </p>
           </section>
         </div>
