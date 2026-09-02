@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AnimatePresence, motion } from "motion/react";
 import { useCart, CUT_OPTIONS } from "@/context/CartContext";
 import { money } from "@/lib/format";
 import { computeTax } from "@/lib/tax";
@@ -42,8 +43,17 @@ export default function CartPage() {
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
         {/* line items */}
         <div className="divide-y divide-border rounded-card border border-border bg-surface">
+          <AnimatePresence initial={false} mode="popLayout">
           {lines.map(({ product, qty, lineTotal, cut, allowSub }) => (
-            <div key={product.id} className="flex gap-4 p-4">
+            <motion.div
+              key={product.id}
+              layout
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, x: -28, transition: { duration: 0.2 } }}
+              transition={{ type: "spring", stiffness: 380, damping: 34 }}
+              className="flex gap-4 p-4"
+            >
               <Link href={`/product/${product.slug}`} className="shrink-0">
                 <ProductImage slug={product.slug} name={product.name} category={product.category} className="h-24 w-24 overflow-hidden rounded-lg" />
               </Link>
@@ -65,8 +75,19 @@ export default function CartPage() {
                     <button onClick={() => setQty(product.id, qty - 1)} className="flex h-9 w-9 items-center justify-center rounded-l-full hover:bg-muted cursor-pointer" aria-label="Decrease quantity">
                       <MinusIcon width={16} height={16} />
                     </button>
-                    <span className="w-12 text-center text-sm font-semibold">
-                      {qty}{isWeighed(product) && <span className="text-xs font-normal text-muted-foreground"> lb</span>}
+                    <span className="inline-flex w-12 items-baseline justify-center overflow-hidden text-sm font-semibold">
+                      <AnimatePresence mode="popLayout" initial={false}>
+                        <motion.span
+                          key={qty}
+                          initial={{ y: 10, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          exit={{ y: -10, opacity: 0 }}
+                          transition={{ duration: 0.16 }}
+                        >
+                          {qty}
+                        </motion.span>
+                      </AnimatePresence>
+                      {isWeighed(product) && <span className="ml-0.5 text-xs font-normal text-muted-foreground">lb</span>}
                     </span>
                     <button onClick={() => setQty(product.id, qty + 1)} className="flex h-9 w-9 items-center justify-center rounded-r-full hover:bg-muted cursor-pointer" aria-label="Increase quantity">
                       <PlusIcon width={16} height={16} />
@@ -105,16 +126,17 @@ export default function CartPage() {
                   </button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-          <div className="flex justify-between p-4">
+          </AnimatePresence>
+          <motion.div layout className="flex justify-between p-4">
             <button onClick={clear} className="text-sm font-semibold text-muted-foreground hover:text-destructive cursor-pointer">Clear cart</button>
             <Link href="/shop" className="text-sm font-semibold text-primary hover:underline">Continue shopping →</Link>
-          </div>
+          </motion.div>
         </div>
 
         {/* summary */}
-        <aside className="lg:sticky lg:top-36 lg:self-start">
+        <motion.aside layout className="lg:sticky lg:top-36 lg:self-start">
           <div className="rounded-card border border-border bg-surface p-6 shadow-soft">
             <h2 className="font-display text-lg font-bold">Order Summary</h2>
 
@@ -149,7 +171,7 @@ export default function CartPage() {
             </Link>
             <p className="mt-3 text-center text-xs text-muted-foreground">Secure checkout · Pay in cash or card at pickup</p>
           </div>
-        </aside>
+        </motion.aside>
       </div>
     </div>
   );

@@ -29,8 +29,19 @@
   color-scheme: light;
 }
 
-* {
-  border-color: var(--color-border);
+/*
+ * Default border colour, matching Tailwind v3's preflight behaviour.
+ *
+ * MUST stay inside @layer base. Tailwind v4 emits its utilities into
+ * @layer utilities, and unlayered CSS outranks every layer regardless
+ * of specificity — so an unlayered `*` rule here silently overrode
+ * every border-colour utility in the project (border-primary,
+ * border-transparent, arbitrary values, the lot).
+ */
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
 }
 
 html {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Rubik, Nunito_Sans } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
+import { MotionProvider } from "@/components/MotionProvider";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { site } from "@/lib/site.config";
@@ -39,9 +40,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${rubik.variable} ${nunito.variable}`}>
       <body>
         <CartProvider>
+          <MotionProvider>
           <Header />
           <main className="min-h-[60vh]">{children}</main>
           <Footer />
+          </MotionProvider>
         </CartProvider>
       </body>
     </html>

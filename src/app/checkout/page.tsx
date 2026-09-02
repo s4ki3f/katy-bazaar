@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { AnimatePresence, motion } from "motion/react";
 import { useCart } from "@/context/CartContext";
 import { site, contactIsPlaceholder } from "@/lib/site.config";
 import { money } from "@/lib/format";
@@ -29,9 +30,14 @@ export default function CheckoutPage() {
   if (placed) {
     return (
       <div className="mx-auto max-w-lg px-6 py-24 text-center">
-        <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary text-white">
+        <motion.span
+          initial={{ scale: 0.6, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 420, damping: 18 }}
+          className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary text-white"
+        >
           <CheckIcon width={34} height={34} />
-        </span>
+        </motion.span>
         <h1 className="mt-5 font-display text-3xl font-bold">Order confirmed!</h1>
         <p className="mt-2 text-muted-foreground">
           Thank you for your order. Your pickup confirmation number is{" "}
@@ -150,25 +156,33 @@ export default function CheckoutPage() {
                 {slots.slice(0, 9).map((s) => {
                   const full = s.remaining === 0;
                   return (
-                    <button
+                    <motion.button
                       key={s.id}
                       type="button"
                       disabled={full}
                       onClick={() => setSlotId(s.id)}
-                      className={`rounded-lg border-2 px-3 py-2.5 text-left transition-colors ${
+                      whileTap={full ? undefined : { scale: 0.97 }}
+                      className={`relative rounded-lg border-2 px-3 py-2.5 text-left transition-colors ${
                         full
                           ? "cursor-not-allowed border-border opacity-50"
                           : slotId === s.id
-                            ? "cursor-pointer border-primary bg-primary/5"
+                            ? "cursor-pointer border-transparent"
                             : "cursor-pointer border-border hover:border-primary/40"
                       }`}
                     >
-                      <span className="block font-display text-sm font-semibold">{s.dayLabel}</span>
-                      <span className="block text-xs text-muted-foreground">{s.timeLabel}</span>
-                      <span className={`mt-0.5 block text-[11px] font-semibold ${full ? "text-muted-foreground" : "text-primary"}`}>
+                      {slotId === s.id && (
+                        <motion.span
+                          layoutId="slot-selection"
+                          transition={{ type: "spring", stiffness: 480, damping: 38 }}
+                          className="pointer-events-none absolute inset-0 rounded-lg border-2 border-primary bg-primary/5"
+                        />
+                      )}
+                      <span className="relative block font-display text-sm font-semibold">{s.dayLabel}</span>
+                      <span className="relative block text-xs text-muted-foreground">{s.timeLabel}</span>
+                      <span className={`relative mt-0.5 block text-[11px] font-semibold ${full ? "text-muted-foreground" : "text-primary"}`}>
                         {full ? "Full" : `${s.remaining} left`}
                       </span>
-                    </button>
+                    </motion.button>
                   );
                 })}
               </div>
@@ -194,26 +208,42 @@ export default function CheckoutPage() {
             <h2 className="font-display text-lg font-bold">Payment</h2>
             <div className="mt-4 grid grid-cols-2 gap-3">
               {(["cash", "card"] as Payment[]).map((p) => (
-                <button
+                <motion.button
                   key={p}
                   type="button"
                   onClick={() => setPayment(p)}
-                  className={`rounded-lg border-2 p-4 text-left transition-colors cursor-pointer ${
-                    payment === p ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                  whileTap={{ scale: 0.98 }}
+                  className={`relative rounded-lg border-2 p-4 text-left transition-colors cursor-pointer ${
+                    payment === p ? "border-transparent" : "border-border hover:border-primary/40"
                   }`}
                 >
-                  <span className="font-display font-semibold">{p === "cash" ? "Cash at Pickup" : "Card"}</span>
-                  <span className="mt-0.5 block text-xs text-muted-foreground">{p === "cash" ? "Pay in-store when you collect" : "Demo only — no charge"}</span>
-                </button>
+                  {payment === p && (
+                    <motion.span
+                      layoutId="tender-selection"
+                      transition={{ type: "spring", stiffness: 480, damping: 38 }}
+                      className="pointer-events-none absolute inset-0 rounded-lg border-2 border-primary bg-primary/5"
+                    />
+                  )}
+                  <span className="relative font-display font-semibold">{p === "cash" ? "Cash at Pickup" : "Card"}</span>
+                  <span className="relative mt-0.5 block text-xs text-muted-foreground">{p === "cash" ? "Pay in-store when you collect" : "Card presented at the counter"}</span>
+                </motion.button>
               ))}
             </div>
+            <AnimatePresence initial={false}>
             {payment === "card" && (
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <motion.div
+                key="cardfields"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="mt-4 grid gap-4 overflow-hidden sm:grid-cols-2"
+              >
                 <Field label="Card number" className="sm:col-span-2"><input className={inputCls} placeholder="4242 4242 4242 4242" inputMode="numeric" /></Field>
                 <Field label="Expiry"><input className={inputCls} placeholder="MM/YY" /></Field>
                 <Field label="CVC"><input className={inputCls} placeholder="123" inputMode="numeric" /></Field>
-              </div>
+              </motion.div>
             )}
+            </AnimatePresence>
           </section>
         </div>
 
@@ -223,7 +253,7 @@ export default function CheckoutPage() {
             <h2 className="font-display text-lg font-bold">Your order</h2>
             <ul className="mt-4 max-h-64 space-y-3 overflow-y-auto pr-1">
               {lines.map(({ product, qty, lineTotal, cut, allowSub }) => (
-                <li key={product.id} className="flex items-start justify-between gap-3 text-sm">
+                <motion.li layout key={product.id} className="flex items-start justify-between gap-3 text-sm">
                   <span className="flex-1">
                     <span className="font-medium">{product.name}</span>
                     <span className="text-muted-foreground"> × {qty}{isWeighed(product) ? " lb" : ""}</span>
@@ -234,7 +264,7 @@ export default function CheckoutPage() {
                     )}
                   </span>
                   <span className="font-semibold">{money(lineTotal)}</span>
-                </li>
+                </motion.li>
               ))}
             </ul>
             <dl className="mt-4 space-y-2.5 border-t border-border pt-4 text-sm">
