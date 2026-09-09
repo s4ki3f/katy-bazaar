@@ -15,6 +15,7 @@
 
 import { site } from "./site.config";
 import { money } from "./format";
+import { authHeaders } from "./admin/auth";
 
 export type OrderLine = {
   /** catalog product id, so the counter app can resolve tax class and unit */
@@ -116,6 +117,15 @@ export function orderToText(o: Order): string {
   ].join("\n");
 }
 
+/** Is this endpoint our own server? A relative path is; anything cross-origin is not. */
+function isSameOrigin(endpoint: string): boolean {
+  try {
+    return new URL(endpoint, window.location.href).origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
 export async function submitOrder(order: Order): Promise<SubmitResult> {
   // The app now receives its own orders. WhatsApp remains available as a
   // secondary channel by setting NEXT_PUBLIC_ORDER_ENDPOINT to "whatsapp".
@@ -125,7 +135,18 @@ export async function submitOrder(order: Order): Promise<SubmitResult> {
     try {
       const res = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        // Carry the counter session ONLY to our own API. It does not authorise anything there —
+        // the route stays open, because a shopper has no account — it just lets the server record
+        // which staff member entered the order, from the token it verifies itself.
+        //
+        // SAME-ORIGIN OR NOTHING. This endpoint is deliberately arbitrary: .env.example and the
+        // README document pointing it at Formspree, Web3Forms, a Zapier catch-hook or Apps Script.
+        // Attaching the header unconditionally would hand a live 12-hour bearer token — which reads
+        // every customer name and phone number and rewrites prices — to a third party's request
+        // logs. The mirror case is just as bad: a service whose CORS preflight refuses an
+        // Authorization header would fail every staff-placed order while the same cart succeeds for
+        // a signed-out shopper.
+        headers: { "Content-Type": "application/json", ...(isSameOrigin(endpoint) ? authHeaders() : {}) },
         body: JSON.stringify(order),
       });
       const payload = (await res.json().catch(() => null)) as

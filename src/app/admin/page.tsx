@@ -293,7 +293,16 @@ function Counter() {
                   current?.reference === o.reference ? "border-primary bg-primary/5" : "border-border bg-surface hover:border-primary/40"
                 }`}
               >
-                <div className="font-display text-lg font-bold tabular-nums">{o.reference}</div>
+                <div className="flex items-center gap-2">
+                  <span className="font-display text-lg font-bold tabular-nums">{o.reference}</span>
+                  {/* Recorded by the server from the signed token, so it says who actually entered
+                      this order — a shopper, or a staff member taking it at the counter or by phone. */}
+                  {o.placedBy && o.placedBy !== "customer" && (
+                    <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+                      by {o.placedBy}
+                    </span>
+                  )}
+                </div>
                 <div className="text-sm text-muted-foreground">{o.customer.name}</div>
                 <div className="mt-1 text-xs font-semibold text-primary">{o.pickupSlot}</div>
                 <div className="mt-1 text-xs text-muted-foreground">

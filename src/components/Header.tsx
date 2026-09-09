@@ -9,6 +9,7 @@ import { categories } from "@/lib/products";
 import { site, phoneIsPlaceholder } from "@/lib/site.config";
 import { asset } from "@/lib/asset";
 import { CartIcon, MenuIcon, CloseIcon, PhoneIcon } from "./icons";
+import { SessionBadge } from "./SessionBadge";
 
 const NAV = [
   { href: "/", label: "Home" },
@@ -63,6 +64,9 @@ export function Header() {
             <PhoneIcon width={18} height={18} /> {site.phone}
           </a>
           )}
+
+          {/* Who is signed in. Renders nothing for a shopper, which is the common case. */}
+          <SessionBadge className="hidden sm:flex" />
 
           <Link
             href="/cart"

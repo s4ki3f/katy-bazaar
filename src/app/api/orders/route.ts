@@ -1,7 +1,7 @@
 import { kvAvailable, KvUnavailableError } from "@/lib/server/kv";
 import { createOrder, listOrders } from "@/lib/server/orders-repo";
 import { reserveForOrder, releaseForOrder, entriesForOrder } from "@/lib/server/availability";
-import { requireRole } from "@/lib/server/session";
+import { requireRole, roleFromRequest } from "@/lib/server/session";
 import { getServerCatalog } from "@/lib/server/pricing-catalog";
 import { site } from "@/lib/site.config";
 import {
@@ -162,6 +162,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // WHO PLACED THIS, decided by the token and nothing else.
+    //
+    // Staff taking a phone order is a real workflow, and those orders used to be indistinguishable
+    // from a shopper's own. `roleFromRequest` verifies an HMAC-signed token, so this cannot be
+    // spoofed by a body field — which is exactly why it is not read from one. No token is the
+    // ordinary case: a shopper, recorded as such.
+    const placedByRole = roleFromRequest(request);
+
     const now = new Date().toISOString();
     const lines = priced.lines.map((pl: PricedLine, i: number) => ({
       productId: pl.productId,
@@ -206,6 +214,8 @@ export async function POST(request: Request) {
       updatedAt: now,
       /** Optimistic-concurrency token. Every staff edit must name the version it was based on. */
       version: 1,
+      /** "customer", or the verified role of the signed-in person who entered it. */
+      placedBy: placedByRole ?? "customer",
       /** What this order claimed, so cancelling or collecting it gives exactly that back. */
       reservation: entriesForOrder(
         priced.lines.map((pl: PricedLine) => ({ productId: pl.productId, qty: pl.qty })),

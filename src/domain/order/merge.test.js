@@ -80,3 +80,17 @@ test('missing order and non-object body are distinguished, and nothing throws', 
     assert.doesNotThrow(() => mergeOrderUpdate(a, b, NOW));
   }
 });
+
+test('placedBy cannot be rewritten or erased by a staff edit', () => {
+  // The field records who ENTERED the order, decided at intake from a verified token. If a staff
+  // client could PUT it back as "customer" — or omit it, which a full replace treats the same way —
+  // the counter would render a staff-entered order identically to a shopper's own.
+  const existing = { reference: 'KB-1 2', placedBy: 'staff', status: 'new', version: 1 };
+  const rewritten = mergeOrderUpdate(existing, { version: 1, status: 'picking', placedBy: 'customer' }, NOW);
+  assert.strictEqual(rewritten.value.placedBy, 'staff');
+  const omitted = mergeOrderUpdate(existing, { version: 1, status: 'picking' }, NOW);
+  assert.strictEqual(omitted.value.placedBy, 'staff');
+  // And an order that genuinely has none does not acquire one from the client.
+  const invented = mergeOrderUpdate({ reference: 'KB-1 2', status: 'new' }, { status: 'picking', placedBy: 'admin' }, NOW);
+  assert.strictEqual(Object.hasOwn(invented.value, 'placedBy'), false);
+});

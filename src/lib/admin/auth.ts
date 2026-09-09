@@ -33,6 +33,9 @@
 
 const TOKEN_KEY = "katy-bazaar-counter-token";
 const ROLE_KEY = "katy-bazaar-counter-role";
+/** Shown in the header so a signed-in person can see WHICH account they are on. Cosmetic only:
+ *  the server never reads it, and derives who placed an order from the signed token instead. */
+const EMAIL_KEY = "katy-bazaar-counter-email";
 
 export type Role = "admin" | "staff";
 
@@ -56,6 +59,33 @@ export function getRole(): Role | null {
   try {
     const r = sessionStorage.getItem(ROLE_KEY);
     return r === "admin" || r === "staff" ? r : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The signed-in account's email, for display. Null when signed out. */
+/**
+ * Session changed IN THIS TAB.
+ *
+ * The `storage` event deliberately does not fire in the tab that made the change, and
+ * sessionStorage is per-tab anyway — so nothing would have told the header that a sign-in or
+ * sign-out just happened, and the badge would keep showing the previous state until the next focus
+ * or reload. Signing in then navigating to the counter is exactly that path.
+ */
+export const SESSION_EVENT = "katy-bazaar-session";
+
+function announce(): void {
+  try {
+    window.dispatchEvent(new Event(SESSION_EVENT));
+  } catch {
+    /* non-browser (SSR, tests) — nobody is listening anyway */
+  }
+}
+
+export function getEmail(): string | null {
+  try {
+    return sessionStorage.getItem(EMAIL_KEY);
   } catch {
     return null;
   }
@@ -85,6 +115,8 @@ export function signOut(): void {
   try {
     sessionStorage.removeItem(TOKEN_KEY);
     sessionStorage.removeItem(ROLE_KEY);
+    sessionStorage.removeItem(EMAIL_KEY);
+    announce();
   } catch {
     /* ignore */
   }
@@ -108,9 +140,11 @@ export async function signIn(email: string, password: string): Promise<SignInRes
     try {
       sessionStorage.setItem(TOKEN_KEY, `dev.${account.role}`);
       sessionStorage.setItem(ROLE_KEY, account.role);
+      sessionStorage.setItem(EMAIL_KEY, email.trim().toLowerCase());
     } catch {
       return { ok: false, message: "Could not start a session — browser storage is unavailable." };
     }
+    announce();
     return { ok: true };
   }
 
@@ -143,9 +177,11 @@ export async function signIn(email: string, password: string): Promise<SignInRes
     try {
       sessionStorage.setItem(TOKEN_KEY, data.token);
       if (data.role === "admin" || data.role === "staff") sessionStorage.setItem(ROLE_KEY, data.role);
+      sessionStorage.setItem(EMAIL_KEY, email.trim().toLowerCase());
     } catch {
       return { ok: false, message: "Could not start a session — browser storage is unavailable." };
     }
+    announce();
     return { ok: true };
   } catch {
     return { ok: false, message: "Could not reach the sign-in service." };

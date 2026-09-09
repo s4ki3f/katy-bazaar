@@ -35,6 +35,8 @@ export type CounterOrder = Omit<Order, "lines"> & {
   status: OrderStatus;
   lines: CounterLine[];
   updatedAt: string;
+  /** Who entered this order: "customer", or the verified role of the staff member who did. */
+  placedBy?: string;
   /**
    * Which stored revision this document was read at. Sent back on save so the server can refuse an
    * edit built on a snapshot somebody else has already replaced — previously the later save just

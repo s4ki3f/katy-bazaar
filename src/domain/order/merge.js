@@ -13,8 +13,15 @@
  * check is only as good as the write that follows it.
  */
 
-/** Fields the server owns outright. A staff client may send them; it may not change them. */
-const SERVER_OWNED = ["reference", "placedAt", "receivedAt", "reservation"];
+/**
+ * Fields the server owns outright. A staff client may send them; it may not change them.
+ *
+ * `placedBy` is here because it records WHO entered the order, decided at intake from an
+ * HMAC-verified token. Leaving it out made it rewritable by exactly the population it exists to
+ * distinguish: a staff token could PUT the order back with placedBy "customer", or simply omit it,
+ * and the counter would render the result identically to a shopper's own order.
+ */
+const SERVER_OWNED = ["reference", "placedAt", "receivedAt", "reservation", "placedBy"];
 
 const isPlainObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 

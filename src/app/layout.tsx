@@ -5,6 +5,7 @@ import { CartProvider } from "@/context/CartContext";
 import { MotionProvider } from "@/components/MotionProvider";
 import { OfferMarquee } from "@/components/OfferMarquee";
 import { Header } from "@/components/Header";
+import { StaffViewBanner } from "@/components/SessionBadge";
 import { Footer } from "@/components/Footer";
 import { site } from "@/lib/site.config";
 import { asset } from "@/lib/asset";
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CartProvider>
           <MotionProvider>
           <Header />
+          <StaffViewBanner />
           <OfferMarquee />
             <main id="main" tabIndex={-1} className="min-h-[60vh]">{children}</main>
           <Footer />
