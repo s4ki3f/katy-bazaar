@@ -29,7 +29,12 @@ export const metadata: Metadata = {
     template: `%s · ${site.name}`,
   },
   description: site.description,
-  icons: { icon: asset("/mark-sign.png") },
+  /*
+   * Versioned deliberately. Browsers cache favicons far more aggressively than pages — often
+   * surviving a hard reload — so replacing the file alone leaves the old icon in the tab. The
+   * query makes it a new URL. Bump it whenever the mark changes.
+   */
+  icons: { icon: asset("/mark-sign.png?v=2") },
   openGraph: {
     title: site.fullName,
     description: site.description,
