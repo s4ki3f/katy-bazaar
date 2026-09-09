@@ -1,4 +1,4 @@
-import { kvAvailable, KvUnavailableError } from "@/lib/server/kv";
+import { dbAvailable as kvAvailable, DbUnavailableError as KvUnavailableError } from "@/lib/server/db";
 import { createOrder, listOrders } from "@/lib/server/orders-repo";
 import { reserveForOrder, releaseForOrder, entriesForOrder } from "@/lib/server/availability";
 import { requireRole, roleFromRequest } from "@/lib/server/session";

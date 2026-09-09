@@ -1,5 +1,5 @@
 import "server-only";
-import { kvGet } from "./kv";
+import { getInventory } from "./db";
 import { products as compiled, type Product } from "@/lib/products";
 
 type InventoryState = {
@@ -18,7 +18,7 @@ type InventoryState = {
  * request.
  */
 export async function getCatalog(): Promise<Product[]> {
-  const state = await kvGet<InventoryState>("inventory");
+  const state = await getInventory<InventoryState>();
   if (!state) return compiled;
 
   const patched = compiled
