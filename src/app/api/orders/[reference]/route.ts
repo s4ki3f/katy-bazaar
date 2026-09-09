@@ -37,9 +37,24 @@ export async function PUT(request: Request, ctx: { params: Promise<{ reference: 
     return Response.json({ error: "Order update must be an object." }, { status: 400 });
   }
 
-  const updated = await updateOrder(decoded, incoming as StoredOrder);
-  if (!updated) return Response.json({ error: "No such order." }, { status: 404 });
-  return Response.json({ ok: true });
+  const result = await updateOrder(decoded, incoming as StoredOrder);
+  if (!result.ok && result.code === "no_such_order") {
+    return Response.json({ error: "No such order." }, { status: 404 });
+  }
+  if (!result.ok) {
+    // 409 with the CURRENT record attached. Answering a bare error would leave the tablet holding a
+    // snapshot it cannot tell is stale, and its next save would be refused too — forever. Handing
+    // back the truth lets it show what actually happened and rebase.
+    return Response.json(
+      {
+        error: "Someone else updated this order while you were working on it.",
+        errors: result.errors,
+        current: result.current,
+      },
+      { status: 409 },
+    );
+  }
+  return Response.json({ ok: true, version: result.order.version, order: result.order });
 }
 
 /** Read one order. Requires a session — it carries a customer's name and phone number. */

@@ -304,3 +304,47 @@ export async function kvCounters(keys: string[]): Promise<Record<string, number>
   for (const k of keys) out[k] = Number(await readJson<number>(`counter:${k}`, 0)) || 0;
   return out;
 }
+
+/**
+ * Write a document only if its stored `version` still matches what the caller last read.
+ *
+ * A version check in application code is worth nothing on its own: read, compare, write is three
+ * steps, and two savers can both pass the comparison before either writes. Redis runs a script to
+ * completion before anything else, so comparing and writing INSIDE one makes the check binding.
+ *
+ * @returns `{ ok: true, version }` with the newly stored version, or `{ ok: false, currentVersion }`
+ * where -1 means the key is absent and -2 that it holds something unreadable.
+ */
+const SET_IF_VERSION = [
+  "local cur = redis.call('GET', KEYS[1])",
+  "if not cur then return {0, -1} end",
+  "local ok, obj = pcall(cjson.decode, cur)",
+  "if not ok then return {0, -2} end",
+  "local v = tonumber(obj.version) or 0",
+  "if v ~= tonumber(ARGV[2]) then return {0, v} end",
+  "redis.call('SET', KEYS[1], ARGV[1])",
+  "return {1, v + 1}",
+].join(" ");
+
+export async function kvSetIfVersion(
+  key: string,
+  value: unknown,
+  expectedVersion: number,
+): Promise<{ ok: true; version: number } | { ok: false; currentVersion: number }> {
+  if (kvConfigured) {
+    const res = await upstash<[number, number]>([
+      "EVAL", SET_IF_VERSION, "1", key, JSON.stringify(value), String(expectedVersion),
+    ]);
+    const [okFlag, version] = res ?? [0, -1];
+    return Number(okFlag) === 1 ? { ok: true, version: Number(version) } : { ok: false, currentVersion: Number(version) };
+  }
+  if (!kvIsFileBacked) throw new KvUnavailableError();
+  return serialised(async () => {
+    const cur = await readJson<{ version?: unknown } | null>(key, null);
+    if (cur === null) return { ok: false as const, currentVersion: -1 };
+    const v = Number.isInteger(cur.version) ? (cur.version as number) : 0;
+    if (v !== expectedVersion) return { ok: false as const, currentVersion: v };
+    await writeJsonAtomic(key, value);
+    return { ok: true as const, version: v + 1 };
+  });
+}

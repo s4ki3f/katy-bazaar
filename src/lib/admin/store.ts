@@ -35,7 +35,22 @@ export type CounterOrder = Omit<Order, "lines"> & {
   status: OrderStatus;
   lines: CounterLine[];
   updatedAt: string;
+  /**
+   * Which stored revision this document was read at. Sent back on save so the server can refuse an
+   * edit built on a snapshot somebody else has already replaced — previously the later save just
+   * overwrote the earlier one and stamped a fresh `updatedAt`, so the clobber looked like the
+   * newest state.
+   */
+  version?: number;
 };
+
+/** A save refused because the order moved underneath this client, carrying what is actually stored. */
+export class OrderConflictError extends Error {
+  constructor(readonly current: CounterOrder | null) {
+    super("Someone else updated this order while you were working on it.");
+    this.name = "OrderConflictError";
+  }
+}
 
 export interface OrderStore {
   list(): Promise<CounterOrder[]>;
@@ -94,7 +109,15 @@ export class ApiOrderStore implements OrderStore {
       headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify(order),
     });
-    if (!res.ok) throw new Error(`Orders API returned ${res.status}`);
+    if (res.ok) return;
+    if (res.status === 409) {
+      // The server hands back the current record precisely so this client can rebase rather than
+      // re-submit over work it never saw.
+      const body = (await res.json().catch(() => null)) as { current?: CounterOrder } | null;
+      throw new OrderConflictError(body?.current ?? null);
+    }
+    const detail = (await res.json().then((b: { error?: string }) => b?.error).catch(() => undefined)) as string | undefined;
+    throw new Error(detail ?? `Orders API returned ${res.status}`);
   }
 }
 

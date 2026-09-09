@@ -3,12 +3,13 @@ import {
   kvGet,
   kvSet,
   kvSetIfAbsent,
+  kvSetIfVersion,
   kvListPushCapped,
   kvListRange,
   kvGetMany,
   kvDelete,
 } from "./kv";
-import { makeReference, parseReference } from "@/domain";
+import { makeReference, parseReference, mergeOrderUpdate } from "@/domain";
 import { releaseForOrder } from "./availability";
 import { randomInt } from "node:crypto";
 
@@ -162,19 +163,51 @@ export async function getOrder(reference: string): Promise<StoredOrder | null> {
 }
 
 /**
- * Replace one order's record. Touches ONE key, so a staff save can no longer erase an order that
- * arrived alongside it — the failure this module exists to remove.
+ * Apply a staff edit to one order, refusing an edit based on a stale version.
+ *
+ * The version is checked twice, and both are load-bearing. `mergeOrderUpdate` compares what the
+ * client claims against what we just read, which produces a good error; `kvSetIfVersion` compares
+ * again inside a single Redis script at the moment of writing, which is what actually makes it
+ * binding. Without the second, two tablets holding the same snapshot both pass the first check and
+ * the later save silently reverts the earlier one — the weighed quantity a charge is computed from
+ * simply disappearing.
  */
 export async function updateOrder(
   reference: string,
   next: StoredOrder,
-): Promise<StoredOrder | null> {
+): Promise<
+  | { ok: true; order: StoredOrder }
+  | { ok: false; code: "no_such_order" }
+  | { ok: false; code: "version_conflict"; errors: unknown[]; current: StoredOrder | null }
+> {
   await ensureMigrated();
-  const existing = await kvGet<StoredOrder>(orderKey(reference));
-  if (!existing) return null;
+  const key = orderKey(reference);
+  const existing = await kvGet<StoredOrder>(key);
+  if (!existing) return { ok: false, code: "no_such_order" };
+
+  const merged = mergeOrderUpdate(existing, { ...next, reference }, new Date().toISOString());
+  if (!merged.ok) {
+    if (merged.errors.some((e) => e.code === "no_such_order")) return { ok: false, code: "no_such_order" };
+    return { ok: false, code: "version_conflict", errors: merged.errors, current: existing };
+  }
+
+  const expected = Number.isInteger(existing.version) ? (existing.version as number) : 0;
+  const written = await kvSetIfVersion(key, merged.value, expected);
+  if (!written.ok) {
+    // Someone else saved between our read and our write. Hand back what is actually stored so the
+    // counter app can show the truth rather than re-submitting over it.
+    return {
+      ok: false,
+      code: "version_conflict",
+      errors: [{ code: "version_conflict", expected: written.currentVersion, received: expected }],
+      current: await kvGet<StoredOrder>(key),
+    };
+  }
+
   // Releasing on the way OUT of an open state, exactly once. A cancelled order must hand its stock
   // and slot back or they stay held by something nobody will collect; a collected one has physically
-  // left the shop, so holding a reservation for it would shrink availability forever.
+  // left the shop, so holding a reservation for it would shrink availability forever. This runs only
+  // after the write succeeded, so a refused edit never releases anything.
   const CLOSED = new Set(["cancelled", "collected"]);
   const wasOpen = !CLOSED.has(String(existing.status ?? ""));
   const nowClosed = CLOSED.has(String(next.status ?? ""));
@@ -182,16 +215,5 @@ export async function updateOrder(
     await releaseForOrder(existing.reservation as { key: string; delta: number }[]);
   }
 
-  const merged: StoredOrder = {
-    ...next,
-    reference,
-    // Fields the server owns; a staff client cannot rewrite when the order arrived or what it costs.
-    placedAt: existing.placedAt,
-    receivedAt: existing.receivedAt,
-    // Server-owned: a staff client must not rewrite what this order claimed.
-    reservation: existing.reservation,
-    updatedAt: new Date().toISOString(),
-  };
-  await kvSet(orderKey(reference), merged);
-  return merged;
+  return { ok: true, order: merged.value as StoredOrder };
 }

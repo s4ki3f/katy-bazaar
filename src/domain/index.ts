@@ -19,6 +19,7 @@ import { authorizeInventoryChange as _authorizeInventoryChange } from "./admin/i
 import { validateInventoryState as _validateInventoryState } from "./admin/inventoryValidate.js";
 import { slotsForDay as _slotsForDay, slotId as _slotId, SLOT_MINUTES as _SLOT_MINUTES } from "./availability/slots.js";
 import { planReservation as _planReservation } from "./availability/reservation.js";
+import { mergeOrderUpdate as _mergeOrderUpdate } from "./order/merge.js";
 
 export type TaxClass = "taxable" | "exempt";
 
@@ -189,3 +190,24 @@ export type ReservationPlan =
  * re-check is what makes acting on it safe.
  */
 export const planReservation = _planReservation as unknown as (req: ReservationRequest) => ReservationPlan;
+
+export type MergeError =
+  | { code: "no_such_order" }
+  | { code: "not_an_object" }
+  | { code: "version_conflict"; expected: number; received: unknown };
+export type MergeResult =
+  | { ok: true; value: Record<string, unknown> }
+  | { ok: false; errors: MergeError[] };
+
+/**
+ * Merge a staff edit onto the stored order, refusing one based on a stale version.
+ *
+ * Pure: it decides, and the caller must apply the result with `kvSetIfVersion`. The check is only
+ * as good as the write that follows it — read/compare/write in application code is three steps, and
+ * two savers can both pass the comparison before either writes.
+ */
+export const mergeOrderUpdate = _mergeOrderUpdate as unknown as (
+  existing: unknown,
+  incoming: unknown,
+  nowISO: string,
+) => MergeResult;

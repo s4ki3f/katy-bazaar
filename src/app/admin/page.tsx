@@ -9,6 +9,7 @@ import {
   type CounterOrder, type OrderStatus, type PickState,
 } from "@/lib/admin/store";
 import { authConfigured, devSignInAvailable, getRole, hasSession, signOut } from "@/lib/admin/auth";
+import { OrderConflictError } from "@/lib/admin/store";
 import { settleOrder, settledLineTotal, lineIsWeighed } from "@/lib/admin/totals";
 import { InventoryPanel } from "@/components/admin/InventoryPanel";
 
@@ -118,7 +119,22 @@ function Counter() {
     next.updatedAt = new Date().toISOString();
     setOrders((prev) => prev.map((o) => (o.reference === next.reference ? next : o)));
     setSelected(next.reference);
-    try { await store.save(next); } catch (e) {
+    try {
+      await store.save(next);
+      setError(null);
+    } catch (e) {
+      // A conflict is not a failure to report and forget: this tablet is now showing work that was
+      // never saved, on top of somebody else's edit it cannot see. Replace the row with what the
+      // server actually holds so the screen stops lying, and say so plainly.
+      if (e instanceof OrderConflictError) {
+        if (e.current) {
+          setOrders((prev) => prev.map((o) => (o.reference === e.current!.reference ? e.current! : o)));
+        } else {
+          void refresh();
+        }
+        setError("Someone else updated this order while you were working on it. Your change was not saved — this order has been reloaded, please redo it.");
+        return;
+      }
       setError(e instanceof Error ? e.message : "Could not save.");
     }
   }

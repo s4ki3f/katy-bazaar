@@ -204,6 +204,8 @@ export async function POST(request: Request) {
       status: "new",
       receivedAt: now,
       updatedAt: now,
+      /** Optimistic-concurrency token. Every staff edit must name the version it was based on. */
+      version: 1,
       /** What this order claimed, so cancelling or collecting it gives exactly that back. */
       reservation: entriesForOrder(
         priced.lines.map((pl: PricedLine) => ({ productId: pl.productId, qty: pl.qty })),
