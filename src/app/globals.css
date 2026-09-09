@@ -1,29 +1,49 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #047857;      /* 5.48:1 with white — was #059669 at 3.77:1 (fails 1.4.3) */
-  --color-primary-dark: #036b4f; /* hover/active, 6.52:1 */
-  --color-on-primary: #ffffff;
-  --color-secondary: #10b981;
-  --color-accent: #b45309;       /* 5.02:1 with white — was #d97706 at 3.19:1 */
-  --color-accent-dark: #9a3412;  /* 7.31:1 */
-  --color-background: #ecfdf5;
+  /*
+   * Palette taken from the shop's own sign (public/logo-sign.png): white script with a purple
+   * neon glow on a dark plum ground, and a green glow under "& Halal Meat". Every value below was
+   * measured off that photograph, then adjusted only where WCAG required it — the note on each
+   * line is its measured contrast, not an aspiration.
+   *
+   * The sign's greens and purples do NOT swap freely between light and dark ground:
+   *   purple #7b04c5 reads at 7.88:1 on white and 2.20:1 on plum
+   *   green  #58d564 reads at 1.89:1 on white and 9.16:1 on plum
+   * So purple carries the light surfaces and the neon green is reserved for dark ones. Using the
+   * neon green as text on white is the one mistake this palette makes easy, hence the token name.
+   */
+  --color-primary: #7b04c5;      /* the sign's purple, unmodified — 7.88:1 with white */
+  --color-primary-dark: #5f0399; /* hover/active, 10.72:1 */
+  --color-on-primary: #ffffff;   /* 7.88:1 on primary */
+  --color-secondary: #a855f7;    /* lighter purple — 3.96:1, DECORATIVE or large text only */
+  --color-accent: #37863f;       /* the sign's green darkened for text — 4.52:1 with white */
+  --color-accent-dark: #2b6b31;  /* hover/active, 6.46:1 */
+  --color-accent-neon: #58d564;  /* the sign's ACTUAL green — 9.16:1 on plum, 1.89:1 on white.
+                                    DARK SURFACES ONLY. As text on white it fails 1.4.3 outright. */
+  --color-background: #faf7fc;   /* page ground, faintly plum-tinted */
   --color-surface: #ffffff;
-  --color-foreground: #0f172a;
-  --color-muted: #f0f8f6;
-  --color-muted-foreground: #52796f;
-  --color-border: #e1f2ed;       /* dividers only — 1.16:1, below the 3:1 that 1.4.11 requires of controls */
-  --color-field: #6e8f84;        /* form-control boundaries — 3.54:1, satisfies 1.4.11 */
+  --color-foreground: #1c1022;   /* plum-tinted near-black — 17.25:1 on background */
+  --color-muted: #f5f0f8;
+  --color-muted-foreground: #6b5a76; /* secondary text — 5.90:1 on background */
+  --color-border: #ece4f1;       /* dividers only — 1.24:1, below the 3:1 that 1.4.11 asks of controls */
+  --color-field: #8b7896;        /* form-control boundaries — 4.02:1, satisfies 1.4.11 */
   --color-destructive: #dc2626;
-  --color-ring: #047857;
+  --color-ring: #7b04c5;
+
+  /* The sign itself, for the header, the footer and anywhere the logo appears. The logo is white
+     script and is INVISIBLE on a light ground, so it needs this behind it. */
+  --color-sign: #27122f;         /* the sign's ground, measured from the photo */
+  --color-sign-deep: #1b0c21;    /* a step darker, for layering */
+  --color-on-sign: #fefdf9;      /* the script white — 17.00:1 on sign */
 
   --font-sans: var(--font-nunito), "Nunito Sans", system-ui, sans-serif;
   --font-display: var(--font-rubik), "Rubik", system-ui, sans-serif;
 
   --radius-card: 1rem;
 
-  --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(5, 150, 105, 0.06);
-  --shadow-lift: 0 12px 32px rgba(5, 150, 105, 0.14);
+  --shadow-soft: 0 1px 2px rgba(28, 16, 34, 0.05), 0 8px 24px rgba(123, 4, 197, 0.07);
+  --shadow-lift: 0 12px 32px rgba(123, 4, 197, 0.16);
 }
 
 :root {

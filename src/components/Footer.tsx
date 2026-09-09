@@ -6,11 +6,12 @@ import { PhoneIcon, PinIcon, ClockIcon } from "./icons";
 
 export function Footer() {
   return (
-    <footer className="mt-20 border-t border-border bg-foreground text-white/80">
+    <footer className="mt-20 border-t border-white/10 bg-sign-deep text-on-sign/80">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={asset("/logo.svg")} alt={site.fullName} width={220} height={60} className="h-11 w-auto brightness-0 invert" />
+          {/* No invert filter: this asset is already the sign, white script on its own plum ground. */}
+          <img src={asset("/logo-sign.png")} alt={site.fullName} width={1229} height={429} className="h-12 w-auto" />
           <p className="max-w-xs text-sm leading-relaxed text-white/60">{site.description}</p>
         </div>
 

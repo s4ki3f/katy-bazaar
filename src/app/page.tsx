@@ -23,13 +23,19 @@ export default function HomePage() {
           category="halal-meat"
           className="absolute inset-0 -z-20 h-full w-full"
         />
-        {/* scrim: dark enough for AA text at the bottom on mobile, angled on desktop */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/90 via-black/70 to-black/45 sm:bg-gradient-to-r sm:from-black/90 sm:via-black/70 sm:to-black/25" />
+        {/*
+          Scrim: dark enough for AA text at the bottom on mobile, angled on desktop. Tinted with
+          the sign's own plum (--color-sign-deep) rather than neutral black, at the same opacities,
+          so the AA headroom is unchanged and the hero reads as part of the brand.
+        */}
+        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-sign-deep/95 via-sign-deep/75 to-sign-deep/45 sm:bg-gradient-to-r sm:from-sign-deep/95 sm:via-sign-deep/70 sm:to-sign-deep/25" />
+        {/* A single purple bloom, echoing the neon behind the lettering. Decorative only. */}
+        <div aria-hidden="true" className="pointer-events-none absolute -left-24 top-1/4 -z-10 h-72 w-72 rounded-full bg-primary/25 blur-3xl" />
 
         <div className="mx-auto max-w-7xl px-6 py-20 sm:py-28 lg:py-36">
           <div className="max-w-xl text-white">
             <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-sm font-semibold backdrop-blur">
-              <span className="h-2 w-2 rounded-full bg-accent" /> 100% Zabihah Halal · Katy, TX
+              <span className="h-2 w-2 rounded-full bg-accent-neon" /> 100% Zabihah Halal · Katy, TX
             </span>
 
             <h1 className="mt-5 font-display text-4xl font-bold leading-[1.05] drop-shadow-sm sm:text-5xl lg:text-6xl">
@@ -43,7 +49,7 @@ export default function HomePage() {
             <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-white/85">
               {["Cut fresh daily", "Order ahead for pickup", "Trusted since day one"].map((t) => (
                 <span key={t} className="inline-flex items-center gap-1.5">
-                  <CheckIcon width={16} height={16} className="text-accent" /> {t}
+                  <CheckIcon width={16} height={16} className="text-accent-neon" /> {t}
                 </span>
               ))}
             </div>

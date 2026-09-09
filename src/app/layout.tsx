@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     template: `%s · ${site.name}`,
   },
   description: site.description,
-  icons: { icon: asset("/mark.svg") },
+  icons: { icon: asset("/mark-sign.png") },
   openGraph: {
     title: site.fullName,
     description: site.description,
