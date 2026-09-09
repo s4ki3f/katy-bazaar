@@ -1,51 +1,44 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 
-/** Fade + rise on scroll into view. Dependency-free, honors reduced-motion. */
+/**
+ * Fade + rise on scroll into view.
+ *
+ * Uses motion's `whileInView` instead of an IntersectionObserver +
+ * setState pair, so the animation runs off the compositor and the
+ * component no longer sets state from an effect.
+ *
+ * Note: the previous implementation accepted an `as` prop. Nothing in
+ * the codebase used it, and re-creating a motion component per render
+ * to support it is a correctness hazard — so it has been dropped. Wrap
+ * the desired element inside <Reveal> instead.
+ */
 export function Reveal({
   children,
   delay = 0,
   className = "",
-  as: Tag = "div",
 }: {
   children: React.ReactNode;
+  /** stagger in milliseconds */
   delay?: number;
   className?: string;
-  as?: React.ElementType;
 }) {
-  const ref = useRef<HTMLElement | null>(null);
-  const [shown, setShown] = useState(false);
+  const reduced = useReducedMotion();
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setShown(true);
-      return;
-    }
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setShown(true);
-          io.disconnect();
-        }
-      },
-      { threshold: 0.15 }
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
+  if (reduced) {
+    return <div className={className}>{children}</div>;
+  }
 
   return (
-    <Tag
-      ref={ref}
-      style={{ transitionDelay: `${delay}ms` }}
-      className={`transition-all duration-700 ease-out ${
-        shown ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
-      } ${className}`}
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.15 }}
+      transition={{ duration: 0.55, delay: delay / 1000, ease: [0.22, 1, 0.36, 1] }}
     >
       {children}
-    </Tag>
+    </motion.div>
   );
 }

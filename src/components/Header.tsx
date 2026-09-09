@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { AnimatePresence, motion } from "motion/react";
 import { useCart } from "@/context/CartContext";
 import { categories } from "@/lib/products";
-import { site } from "@/lib/site.config";
+import { site, phoneIsPlaceholder } from "@/lib/site.config";
 import { asset } from "@/lib/asset";
 import { CartIcon, MenuIcon, CloseIcon, PhoneIcon } from "./icons";
+import { SessionBadge } from "./SessionBadge";
 
 const NAV = [
   { href: "/", label: "Home" },
@@ -54,12 +56,17 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-1.5">
+          {!phoneIsPlaceholder && (
           <a
             href={`tel:${site.phone.replace(/[^0-9+]/g, "")}`}
             className="hidden items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-foreground/80 hover:bg-muted sm:inline-flex"
           >
             <PhoneIcon width={18} height={18} /> {site.phone}
           </a>
+          )}
+
+          {/* Who is signed in. Renders nothing for a shopper, which is the common case. */}
+          <SessionBadge className="hidden sm:flex" />
 
           <Link
             href="/cart"
@@ -67,11 +74,23 @@ export function Header() {
             aria-label={`Cart${ready && count ? `, ${count} items` : ""}`}
           >
             <CartIcon width={22} height={22} />
-            {ready && count > 0 && (
-              <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[11px] font-bold text-white">
-                {count}
-              </span>
-            )}
+            <AnimatePresence>
+              {ready && count > 0 && (
+                <motion.span
+                  key="badge"
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.5, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 520, damping: 24 }}
+                  className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[11px] font-bold text-white"
+                >
+                  {/* re-keying on count replays the pop each time it changes */}
+                  <motion.span key={count} initial={{ y: -7, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.18 }}>
+                    {count}
+                  </motion.span>
+                </motion.span>
+              )}
+            </AnimatePresence>
           </Link>
 
           <button

@@ -14,44 +14,67 @@ export default function HomePage() {
 
   return (
     <>
-      {/* ─── HERO ─── */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary via-primary-dark to-[#065f46]" />
-        <div className="absolute -right-24 -top-24 -z-10 h-96 w-96 rounded-full bg-secondary/30 blur-3xl" />
-        <div className="absolute -bottom-32 -left-24 -z-10 h-96 w-96 rounded-full bg-accent/20 blur-3xl" />
+      {/* ─── HERO ─── full-bleed photograph, legible at every width ─── */}
+      <section className="relative isolate overflow-hidden">
+        {/* the picture */}
+        <ProductImage
+          slug="goat-bone-in"
+          name=""
+          category="halal-meat"
+          className="absolute inset-0 -z-20 h-full w-full"
+        />
+        {/* scrim: dark enough for AA text at the bottom on mobile, angled on desktop */}
+        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/90 via-black/70 to-black/45 sm:bg-gradient-to-r sm:from-black/90 sm:via-black/70 sm:to-black/25" />
 
-        <div className="mx-auto grid max-w-7xl items-center gap-10 px-6 py-16 lg:grid-cols-2 lg:py-24">
-          <div className="text-white">
+        <div className="mx-auto max-w-7xl px-6 py-20 sm:py-28 lg:py-36">
+          <div className="max-w-xl text-white">
             <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-sm font-semibold backdrop-blur">
               <span className="h-2 w-2 rounded-full bg-accent" /> 100% Zabihah Halal · Katy, TX
             </span>
-            <h1 className="mt-5 font-display text-4xl font-bold leading-[1.05] sm:text-5xl lg:text-6xl">
-              Fresh halal meat &<br />everyday groceries.
+
+            <h1 className="mt-5 font-display text-4xl font-bold leading-[1.05] drop-shadow-sm sm:text-5xl lg:text-6xl">
+              Fresh halal meat &amp;<br />everyday groceries.
             </h1>
-            <p className="mt-5 max-w-md text-lg text-white/85">{site.tagline}</p>
+
+            <p className="mt-5 max-w-md text-lg text-white/90">{site.tagline}</p>
 
             <HeroSearch />
 
-            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-white/80">
+            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-white/85">
               {["Cut fresh daily", "Order ahead for pickup", "Trusted since day one"].map((t) => (
                 <span key={t} className="inline-flex items-center gap-1.5">
                   <CheckIcon width={16} height={16} className="text-accent" /> {t}
                 </span>
               ))}
             </div>
-          </div>
 
-          {/* hero visual: featured product tiles */}
-          <div className="relative hidden lg:block">
-            <div className="grid grid-cols-2 gap-4">
-              {popular.slice(0, 4).map((p, i) => (
-                <Reveal key={p.id} delay={i * 80} className={i % 2 ? "mt-8" : ""}>
-                  <div className="rounded-card bg-white/95 p-3 shadow-lift backdrop-blur">
-                    <ProductCardMini slug={p.slug} name={p.name} category={p.category} price={p.price} />
-                  </div>
-                </Reveal>
-              ))}
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href="/shop?category=halal-meat"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-semibold text-on-primary transition-colors hover:bg-primary-dark focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+              >
+                Shop the meat counter <ArrowIcon width={18} height={18} />
+              </Link>
+              <Link
+                href="/shop"
+                className="inline-flex items-center gap-2 rounded-full border border-white/40 px-6 py-3 font-semibold text-white transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+              >
+                Browse all aisles
+              </Link>
             </div>
+          </div>
+        </div>
+
+        {/* featured picks — desktop only, they sit in the quiet side of the scrim */}
+        <div className="pointer-events-none absolute inset-y-0 right-6 hidden items-center xl:flex">
+          <div className="pointer-events-auto grid w-[22rem] grid-cols-2 gap-4">
+            {popular.slice(0, 4).map((p, i) => (
+              <Reveal key={p.id} delay={i * 80} className={i % 2 ? "mt-8" : ""}>
+                <div className="rounded-card bg-white/95 p-3 shadow-lift backdrop-blur">
+                  <ProductCardMini slug={p.slug} name={p.name} category={p.category} price={p.price} />
+                </div>
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>
@@ -87,11 +110,19 @@ export default function HomePage() {
                 className="group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-card p-5 text-white shadow-soft transition-shadow hover:shadow-lift"
                 style={{ background: `linear-gradient(135deg, ${c.hue[0]}, ${c.hue[1]})` }}
               >
+                {/* real aisle photography, with the gradient showing through as a tint */}
+                <ProductImage
+                  slug={c.heroSlug}
+                  name=""
+                  category={c.slug}
+                  className="absolute inset-0 h-full w-full scale-105 transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
                 <div className="absolute right-4 top-4 opacity-0 transition-opacity group-hover:opacity-100">
                   <ArrowIcon width={22} height={22} />
                 </div>
-                <h3 className="font-display text-lg font-bold">{c.name}</h3>
-                <p className="text-sm text-white/80">{c.blurb}</p>
+                <h3 className="relative font-display text-lg font-bold drop-shadow">{c.name}</h3>
+                <p className="relative text-sm text-white/85 drop-shadow">{c.blurb}</p>
               </Link>
             </Reveal>
           ))}
@@ -121,15 +152,26 @@ export default function HomePage() {
           </Reveal>
           <div className="grid grid-cols-2 gap-4">
             {[
-              { k: "Daily", v: "Fresh cuts" },
-              { k: "4", v: "Meat types" },
-              { k: "100%", v: "Zabihah halal" },
-              { k: "0$", v: "Custom-cut fee" },
-            ].map((s) => (
-              <div key={s.v} className="rounded-card border border-white/10 bg-white/5 p-6 text-center">
-                <div className="font-display text-3xl font-bold text-accent">{s.k}</div>
-                <div className="mt-1 text-sm text-white/70">{s.v}</div>
-              </div>
+              { slug: "goat-bone-in", cat: "halal-meat", k: "Daily", v: "Fresh cuts" },
+              { slug: "lamb-chops", cat: "halal-meat", k: "4", v: "Meat types" },
+              { slug: "beef-boneless-cubes", cat: "halal-meat", k: "100%", v: "Zabihah halal" },
+              { slug: "whole-chicken", cat: "poultry", k: "$0", v: "Custom-cut fee" },
+            ].map((s, i) => (
+              <Reveal key={s.v} delay={i * 70}>
+                <div className="relative aspect-[4/3] overflow-hidden rounded-card border border-white/10">
+                  <ProductImage
+                    slug={s.slug}
+                    name=""
+                    category={s.cat}
+                    className="absolute inset-0 h-full w-full transition-transform duration-500 hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-4">
+                    <div className="font-display text-2xl font-bold text-accent drop-shadow">{s.k}</div>
+                    <div className="text-xs text-white/85 drop-shadow">{s.v}</div>
+                  </div>
+                </div>
+              </Reveal>
             ))}
           </div>
         </div>

@@ -1,20 +1,21 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #059669;
-  --color-primary-dark: #047857;
+  --color-primary: #047857;      /* 5.48:1 with white — was #059669 at 3.77:1 (fails 1.4.3) */
+  --color-primary-dark: #036b4f; /* hover/active, 6.52:1 */
   --color-on-primary: #ffffff;
   --color-secondary: #10b981;
-  --color-accent: #d97706;
-  --color-accent-dark: #b45309;
+  --color-accent: #b45309;       /* 5.02:1 with white — was #d97706 at 3.19:1 */
+  --color-accent-dark: #9a3412;  /* 7.31:1 */
   --color-background: #ecfdf5;
   --color-surface: #ffffff;
   --color-foreground: #0f172a;
   --color-muted: #f0f8f6;
   --color-muted-foreground: #52796f;
-  --color-border: #e1f2ed;
+  --color-border: #e1f2ed;       /* dividers only — 1.16:1, below the 3:1 that 1.4.11 requires of controls */
+  --color-field: #6e8f84;        /* form-control boundaries — 3.54:1, satisfies 1.4.11 */
   --color-destructive: #dc2626;
-  --color-ring: #059669;
+  --color-ring: #047857;
 
   --font-sans: var(--font-nunito), "Nunito Sans", system-ui, sans-serif;
   --font-display: var(--font-rubik), "Rubik", system-ui, sans-serif;
@@ -29,8 +30,19 @@
   color-scheme: light;
 }
 
-* {
-  border-color: var(--color-border);
+/*
+ * Default border colour, matching Tailwind v3's preflight behaviour.
+ *
+ * MUST stay inside @layer base. Tailwind v4 emits its utilities into
+ * @layer utilities, and unlayered CSS outranks every layer regardless
+ * of specificity — so an unlayered `*` rule here silently overrode
+ * every border-colour utility in the project (border-primary,
+ * border-transparent, arbitrary values, the lot).
+ */
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
 }
 
 html {
@@ -56,6 +68,18 @@ h1, h2, h3, h4, .font-display {
     scroll-behavior: auto !important;
   }
 }
+
+/* Weekend-offer marquee. A CSS animation (not a JS one) so it can be
+   paused with animation-play-state, which is what WCAG 2.2.2 needs. */
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee-scroll 34s linear infinite;
+  will-change: transform;
+}
+.marquee-track[data-paused="true"] { animation-play-state: paused; }
 
 /* Utility: hide scrollbar for horizontal category rails */
 .no-scrollbar::-webkit-scrollbar { display: none; }

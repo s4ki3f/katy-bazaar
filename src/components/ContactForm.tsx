@@ -6,7 +6,7 @@ import { CheckIcon } from "./icons";
 export function ContactForm() {
   const [sent, setSent] = useState(false);
   const inputCls =
-    "w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-ring";
+    "w-full rounded-lg border border-field bg-surface px-4 py-2.5 text-sm outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-ring";
 
   if (sent) {
     return (

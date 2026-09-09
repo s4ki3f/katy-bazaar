@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "katy-bazaar-counter",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:counter"],
+      "port": 3000
+    }
+  ]
+}

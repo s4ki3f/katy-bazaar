@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { site, valueProps } from "@/lib/site.config";
+import { site, valueProps, addressIsPlaceholder } from "@/lib/site.config";
 import { Reveal } from "@/components/Reveal";
+import { ProductImage } from "@/components/ProductImage";
 import { ICON_MAP, ArrowIcon } from "@/components/icons";
 
 export const metadata: Metadata = {
@@ -12,8 +13,15 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <>
-      <section className="bg-gradient-to-br from-primary to-primary-dark text-white">
-        <div className="mx-auto max-w-4xl px-6 py-20 text-center">
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary to-primary-dark text-white">
+        <ProductImage
+          slug="goat-bone-in"
+          name=""
+          category="halal-meat"
+          className="absolute inset-0 h-full w-full opacity-25"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-primary-dark/95" />
+        <div className="relative mx-auto max-w-4xl px-6 py-20 text-center">
           <span className="text-sm font-bold uppercase tracking-widest text-white/70">Our Story</span>
           <h1 className="mt-3 font-display text-4xl font-bold sm:text-5xl">More than a store — a neighborhood bazaar.</h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-white/85">{site.description}</p>
@@ -61,7 +69,7 @@ export default function AboutPage() {
         <div className="rounded-card bg-foreground px-8 py-14 text-center text-white sm:px-16">
           <h2 className="font-display text-3xl font-bold">Come visit the bazaar</h2>
           <p className="mx-auto mt-3 max-w-md text-white/70">
-            {site.address.line1}, {site.address.city}, {site.address.state} — or order online and pick up fresh in-store.
+            {addressIsPlaceholder ? `${site.address.city}, ${site.address.state}` : `${site.address.line1}, ${site.address.city}, ${site.address.state}`} — or order online and pick up fresh in-store.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link href="/shop" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 font-semibold text-primary hover:scale-[1.03] transition-transform">

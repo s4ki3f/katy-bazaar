@@ -3,7 +3,24 @@
 import { createContext, useContext, useEffect, useMemo, useReducer } from "react";
 import { products, type Product } from "@/lib/products";
 
-export type CartItem = { id: string; qty: number };
+export type CartItem = {
+  id: string;
+  qty: number;
+  /** butcher instruction for this line, e.g. "Curry cut (bone-in)" */
+  cut?: string;
+  /** false = do not substitute if out of stock */
+  allowSub?: boolean;
+};
+
+/** Cut options offered on meat & poultry lines. */
+export const CUT_OPTIONS = [
+  "Curry cut (bone-in)",
+  "Boti (boneless cubes)",
+  "Keema (ground)",
+  "Whole / uncut",
+  "Bone-in pieces",
+  "Thin sliced",
+] as const;
 
 type State = { items: CartItem[]; ready: boolean };
 type Action =
@@ -11,6 +28,8 @@ type Action =
   | { type: "add"; id: string; qty?: number }
   | { type: "remove"; id: string }
   | { type: "setQty"; id: string; qty: number }
+  | { type: "setCut"; id: string; cut: string }
+  | { type: "setAllowSub"; id: string; allowSub: boolean }
   | { type: "clear" };
 
 const STORAGE_KEY = "katy-bazaar-cart";
@@ -33,6 +52,10 @@ function reducer(state: State, action: Action): State {
       if (action.qty <= 0) return { ...state, items: state.items.filter((i) => i.id !== action.id) };
       return { ...state, items: state.items.map((i) => (i.id === action.id ? { ...i, qty: action.qty } : i)) };
     }
+    case "setCut":
+      return { ...state, items: state.items.map((i) => (i.id === action.id ? { ...i, cut: action.cut || undefined } : i)) };
+    case "setAllowSub":
+      return { ...state, items: state.items.map((i) => (i.id === action.id ? { ...i, allowSub: action.allowSub } : i)) };
     case "clear":
       return { ...state, items: [] };
     default:
@@ -40,7 +63,14 @@ function reducer(state: State, action: Action): State {
   }
 }
 
-export type CartLine = { product: Product; qty: number; lineTotal: number };
+export type CartLine = {
+  product: Product;
+  qty: number;
+  lineTotal: number;
+  cut?: string;
+  /** defaults to true when the shopper has not chosen */
+  allowSub: boolean;
+};
 
 type CartContextValue = {
   ready: boolean;
@@ -50,6 +80,8 @@ type CartContextValue = {
   add: (id: string, qty?: number) => void;
   remove: (id: string) => void;
   setQty: (id: string, qty: number) => void;
+  setCut: (id: string, cut: string) => void;
+  setAllowSub: (id: string, allowSub: boolean) => void;
   clear: () => void;
 };
 
@@ -84,7 +116,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       .map((i) => {
         const product = products.find((p) => p.id === i.id);
         if (!product) return null;
-        return { product, qty: i.qty, lineTotal: product.price * i.qty };
+        return { product, qty: i.qty, lineTotal: product.price * i.qty, cut: i.cut, allowSub: i.allowSub !== false };
       })
       .filter(Boolean) as CartLine[];
 
@@ -99,6 +131,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       add: (id, qty) => dispatch({ type: "add", id, qty }),
       remove: (id) => dispatch({ type: "remove", id }),
       setQty: (id, qty) => dispatch({ type: "setQty", id, qty }),
+      setCut: (id, cut) => dispatch({ type: "setCut", id, cut }),
+      setAllowSub: (id, allowSub) => dispatch({ type: "setAllowSub", id, allowSub }),
       clear: () => dispatch({ type: "clear" }),
     };
   }, [state.items, state.ready]);

@@ -1,36 +1,35 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { categories, products } from "@/lib/products";
+import { categories, type Product } from "@/lib/products";
 import { ProductCard } from "./ProductCard";
 import { SearchIcon } from "./icons";
 
 type Sort = "popular" | "price-asc" | "price-desc" | "rating";
 
-export function ShopBrowser() {
+export function ShopBrowser({ products }: { products: Product[] }) {
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
-  const [category, setCategory] = useState<string>(params.get("category") ?? "all");
-  const [query, setQuery] = useState<string>(params.get("q") ?? "");
+  // The URL is the single source of truth for category and query. Mirroring
+  // it into state and re-syncing from an effect caused a cascading render on
+  // every navigation; deriving it here cannot drift.
+  const category = params.get("category") ?? "all";
+  const query = params.get("q") ?? "";
   const [sort, setSort] = useState<Sort>("popular");
 
-  // keep state in sync when nav happens from header links
-  useEffect(() => {
-    setCategory(params.get("category") ?? "all");
-    setQuery(params.get("q") ?? "");
-  }, [params]);
-
-  // reflect category in the URL (shareable) without full navigation
-  function selectCategory(slug: string) {
-    setCategory(slug);
+  function setParam(key: string, value: string, keep = true) {
     const sp = new URLSearchParams(Array.from(params.entries()));
-    if (slug === "all") sp.delete("category");
-    else sp.set("category", slug);
-    router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
+    if (!value || (key === "category" && value === "all")) sp.delete(key);
+    else sp.set(key, value);
+    const qs = sp.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: keep });
   }
+
+  const selectCategory = (slug: string) => setParam("category", slug, false);
+  const setQuery = (v: string) => setParam("q", v);
 
   const results = useMemo(() => {
     let list = products.slice();
@@ -49,7 +48,7 @@ export function ShopBrowser() {
         list.sort((a, b) => (b.badge === "Popular" ? 1 : 0) - (a.badge === "Popular" ? 1 : 0));
     }
     return list;
-  }, [category, query, sort]);
+  }, [products, category, query, sort]);
 
   const activeName = category === "all" ? "All Products" : categories.find((c) => c.slug === category)?.name;
 
@@ -71,7 +70,7 @@ export function ShopBrowser() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search…"
               aria-label="Search products"
-              className="w-full rounded-full border border-border bg-surface py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-ring"
+              className="w-full rounded-full border border-field bg-surface py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
           <h2 className="px-1 pb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Categories</h2>
@@ -101,7 +100,7 @@ export function ShopBrowser() {
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as Sort)}
-                className="rounded-full border border-border bg-surface px-3 py-2 text-sm font-medium outline-none focus:border-primary cursor-pointer"
+                className="rounded-full border border-field bg-surface px-3 py-2 text-sm font-medium outline-none focus:border-primary cursor-pointer"
               >
                 <option value="popular">Most popular</option>
                 <option value="price-asc">Price: low to high</option>
