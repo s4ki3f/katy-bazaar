@@ -1,6 +1,6 @@
 import { kvAvailable, KvUnavailableError } from "@/lib/server/kv";
 import { getOrder, updateOrder } from "@/lib/server/orders-repo";
-import { roleFromRequest } from "@/lib/server/session";
+import { requireRole } from "@/lib/server/session";
 
 export const runtime = "nodejs";
 
@@ -18,9 +18,9 @@ export async function PUT(request: Request, ctx: { params: Promise<{ reference: 
   if (!kvAvailable) {
     return Response.json({ error: new KvUnavailableError().message }, { status: 503 });
   }
-  if (!roleFromRequest(request)) {
-    return Response.json({ error: "Not authorised." }, { status: 401 });
-  }
+  // Picking and settling an order is the counter job, so both roles may do it.
+  const auth = requireRole(request, ["admin", "staff"]);
+  if (!auth.ok) return auth.response;
 
   const { reference } = await ctx.params;
   const decoded = decodeURIComponent(reference);
@@ -47,9 +47,8 @@ export async function GET(request: Request, ctx: { params: Promise<{ reference: 
   if (!kvAvailable) {
     return Response.json({ error: new KvUnavailableError().message }, { status: 503 });
   }
-  if (!roleFromRequest(request)) {
-    return Response.json({ error: "Not authorised." }, { status: 401 });
-  }
+  const auth = requireRole(request, ["admin", "staff"]);
+  if (!auth.ok) return auth.response;
   const { reference } = await ctx.params;
   const order = await getOrder(decodeURIComponent(reference));
   if (!order) return Response.json({ error: "No such order." }, { status: 404 });

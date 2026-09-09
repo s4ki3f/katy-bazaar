@@ -1,6 +1,6 @@
 import { kvAvailable, KvUnavailableError } from "@/lib/server/kv";
 import { createOrder, listOrders } from "@/lib/server/orders-repo";
-import { roleFromRequest } from "@/lib/server/session";
+import { requireRole } from "@/lib/server/session";
 import { getServerCatalog } from "@/lib/server/pricing-catalog";
 import { site } from "@/lib/site.config";
 import {
@@ -40,12 +40,15 @@ function slotLabel(slotId: string): string {
   return `${day}, ${t(start)} – ${t(end)}`;
 }
 
-/** Staff read the queue. Requires a session. */
+/**
+ * Read the queue. Both roles work it — picking orders is the staff job — but the check is now an
+ * explicit role decision rather than "is this anybody?", so tightening it later is a one-line edit
+ * in a place that is obviously about authorisation.
+ */
 export async function GET(request: Request) {
   if (!kvAvailable) return unavailable();
-  if (!roleFromRequest(request)) {
-    return Response.json({ error: "Not authorised." }, { status: 401 });
-  }
+  const auth = requireRole(request, ["admin", "staff"]);
+  if (!auth.ok) return auth.response;
   return Response.json(await listOrders());
 }
 

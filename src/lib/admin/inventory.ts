@@ -78,7 +78,15 @@ export class ApiInventoryStore implements InventoryStore {
       headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify(state),
     });
-    if (!res.ok) throw new Error(`Inventory API returned ${res.status}`);
+    if (res.ok) return;
+    // The server now refuses a staff account's price edit with 403 and says why. Throwing
+    // "Inventory API returned 403" would hide that behind a status code and leave the person
+    // staring at a save button that silently does nothing.
+    const detail = (await res
+      .json()
+      .then((b: { error?: string }) => b?.error)
+      .catch(() => undefined)) as string | undefined;
+    throw new Error(detail ?? `Inventory API returned ${res.status}`);
   }
 }
 

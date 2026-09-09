@@ -15,6 +15,8 @@ import { taxCentsFor as _taxCentsFor } from "./tax/texas.js";
 import { priceLines as _priceLines } from "./pricing/lines.js";
 import { orderTotals as _orderTotals } from "./order/totals.js";
 import { validateOrderPayload as _validateOrderPayload } from "./order/validate.js";
+import { authorizeInventoryChange as _authorizeInventoryChange } from "./admin/inventoryAuthz.js";
+import { validateInventoryState as _validateInventoryState } from "./admin/inventoryValidate.js";
 
 export type TaxClass = "taxable" | "exempt";
 
@@ -102,3 +104,50 @@ export const orderTotals: (pricedLines: PricedLine[], rateBasisPoints: number) =
 export const validateOrderPayload = _validateOrderPayload as unknown as (
   payload: unknown,
 ) => ValidateResult;
+
+export type Role = "admin" | "staff";
+export type InventoryPatch = Partial<{
+  price: number;
+  unit: string;
+  taxClass: TaxClass;
+  stock: number;
+  name: string;
+}>;
+export type InventoryState = {
+  patches: Record<string, InventoryPatch>;
+  added: unknown[];
+  hidden: string[];
+};
+export type InventoryError = { code: string; id?: string; field?: string; index?: number };
+export type InventoryValidateResult =
+  | { ok: true; value: InventoryState }
+  | { ok: false; errors: InventoryError[] };
+export type AuthorizeResult = { ok: true } | { ok: false; errors: InventoryError[] };
+
+/** Shape-check an inventory overlay. Never throws. */
+export const validateInventoryState = _validateInventoryState as unknown as (
+  payload: unknown,
+) => InventoryValidateResult;
+
+/**
+ * Authorise a change to the inventory overlay by ROLE and by FIELD.
+ *
+ * Admin may change anything; staff may change only `stock`. The counter UI has always drawn this
+ * line ("staff keep the shelves honest; only admin changes what a thing is or costs") but drew it
+ * in the browser, where a staff token plus one curl could set any price to a penny.
+ */
+/**
+ * `current` and `next` are typed as InventoryState rather than `unknown` ON PURPOSE.
+ *
+ * The module's contract says it never throws, and it very nearly holds — but its guards are default
+ * parameters (`current = {}`), which catch `undefined` and NOT `null`, so an explicit null state
+ * throws on `state.patches`. Rather than edit a module whose bytes carry a verification verdict, the
+ * type makes that input unreachable from TypeScript, and the only caller
+ * (`src/app/api/inventory/route.ts`) additionally resolves storage with `?? EMPTY`. Recorded here
+ * rather than silently relied upon: the gap is real, it is closed at the boundary, not in the module.
+ */
+export const authorizeInventoryChange = _authorizeInventoryChange as unknown as (
+  role: string,
+  current: InventoryState,
+  next: InventoryState,
+) => AuthorizeResult;

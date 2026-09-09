@@ -44,3 +44,45 @@ export function roleFromRequest(request: Request): Role | null {
   const m = /^Bearer (.+)$/.exec(auth);
   return m ? verifyToken(m[1], secret) : null;
 }
+
+/**
+ * Resolve the caller's role and REQUIRE it to be one of `allowed`.
+ *
+ * WHY THIS EXISTS. `roleFromRequest` returns the role, and the role is trustworthy — it lives
+ * inside the HMAC-signed payload, so a client cannot forge it. Every call site nevertheless wrote
+ *
+ *     if (!roleFromRequest(request)) return 401
+ *
+ * which throws the role away and asks only "is this anybody?". The counter UI has always drawn the
+ * real line — `InventoryPanel` says "staff keep the shelves honest; only admin changes what a thing
+ * is or costs" — but that line lived only in the browser, so a staff token could rewrite any price
+ * with one curl. A truthiness test on a value that carries an authorisation decision is the bug.
+ *
+ * Returning a discriminated union rather than the role alone means a caller cannot accidentally use
+ * the result as a boolean and get back to where we started.
+ */
+export type AuthOutcome =
+  | { ok: true; role: Role }
+  | { ok: false; response: Response };
+
+export function requireRole(request: Request, allowed: readonly Role[]): AuthOutcome {
+  const role = roleFromRequest(request);
+  if (!role) {
+    return {
+      ok: false,
+      response: Response.json({ error: "Not authorised." }, { status: 401 }),
+    };
+  }
+  if (!allowed.includes(role)) {
+    // 403, not 401: the caller IS authenticated and simply may not do this. Answering 401 would
+    // tell a signed-in staff member their session had expired and send them to re-login forever.
+    return {
+      ok: false,
+      response: Response.json(
+        { error: "Your account does not have permission to do that.", errors: [{ code: "forbidden_role" }] },
+        { status: 403 },
+      ),
+    };
+  }
+  return { ok: true, role };
+}
