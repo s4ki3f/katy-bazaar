@@ -1,5 +1,6 @@
 import { kvAvailable, KvUnavailableError } from "@/lib/server/kv";
 import { createOrder, listOrders } from "@/lib/server/orders-repo";
+import { reserveForOrder, releaseForOrder, entriesForOrder } from "@/lib/server/availability";
 import { requireRole } from "@/lib/server/session";
 import { getServerCatalog } from "@/lib/server/pricing-catalog";
 import { site } from "@/lib/site.config";
@@ -90,7 +91,7 @@ export async function POST(request: Request) {
   const order = validated.value;
 
   try {
-    const { pricing, display } = await getServerCatalog();
+    const { pricing, display, stock: stockOf } = await getServerCatalog();
     const priced = priceLines(
       order.lines.map((l: ValidatedLine) => ({ productId: l.productId, qty: l.qty })),
       pricing,
@@ -125,6 +126,37 @@ export async function POST(request: Request) {
           quotedTotalCents: quoted,
           actualTotalCents: totals.totalCents,
           actualTotal: fromCents(totals.totalCents),
+        },
+        { status: 409 },
+      );
+    }
+
+    // CLAIM STOCK AND THE SLOT BEFORE THE ORDER EXISTS.
+    //
+    // Nothing used to reserve anything: stock was shown and never decremented, so ten shoppers
+    // could each be sold the last leg of lamb, and slot "remaining" was a hash of the slot id that
+    // never moved when somebody booked. The claim happens before the record is written so a
+    // rejected order leaves nothing behind, and it is applied atomically — the plan below is
+    // computed from a read and is stale the instant it exists.
+    const onHand: Record<string, number> = Object.create(null);
+    for (const pl of priced.lines) onHand[pl.productId] = stockOf[pl.productId] ?? 0;
+
+    const claim = await reserveForOrder({
+      lines: priced.lines.map((pl: PricedLine) => ({ productId: pl.productId, qty: pl.qty })),
+      onHand,
+      slotId: order.pickupSlotId,
+    });
+    if (!claim.ok) {
+      const errors = claim.plan && !claim.plan.ok
+        ? claim.plan.errors
+        : [{ code: "no_longer_available", key: claim.blockedKey }];
+      const slotGone = errors.some((e) => "code" in e && e.code === "slot_full") || claim.blockedKey?.startsWith("slot:");
+      return Response.json(
+        {
+          error: slotGone
+            ? "That pickup time just filled up. Please choose another."
+            : "Some items are no longer in stock in the quantity you asked for.",
+          errors,
         },
         { status: 409 },
       );
@@ -172,9 +204,17 @@ export async function POST(request: Request) {
       status: "new",
       receivedAt: now,
       updatedAt: now,
+      /** What this order claimed, so cancelling or collecting it gives exactly that back. */
+      reservation: entriesForOrder(
+        priced.lines.map((pl: PricedLine) => ({ productId: pl.productId, qty: pl.qty })),
+        order.pickupSlotId,
+      ),
     }));
 
     if (!created) {
+      // The claim succeeded but the order did not: hand the stock and slot straight back, or they
+      // stay held by an order nobody can see.
+      await releaseForOrder(claim.entries);
       // Refuse rather than reuse. Every draw collided, which at 10^6 references means something is
       // wrong; answering 200 with somebody else's reference is what this rewrite exists to prevent.
       return Response.json(

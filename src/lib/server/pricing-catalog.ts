@@ -5,6 +5,8 @@ import { toCents, type PricingCatalog, type TaxClass } from "@/domain";
 
 /** What the counter app needs to render a line it did not price. Server-owned, like the price. */
 export type DisplayInfo = Record<string, { name: string; unit: string }>;
+/** The shop's declared on-hand count, which stock reservation measures against. */
+export type StockInfo = Record<string, number>;
 
 /**
  * The catalog as the SERVER trusts it: integer cents, resolved tax class, and whether the item is
@@ -16,10 +18,11 @@ export type DisplayInfo = Record<string, { name: string; unit: string }>;
  * resolve `"constructor"` or `"toString"` to an inherited function. Defence in depth at the seam
  * where untrusted productIds arrive.
  */
-export async function getServerCatalog(): Promise<{ pricing: PricingCatalog; display: DisplayInfo }> {
+export async function getServerCatalog(): Promise<{ pricing: PricingCatalog; display: DisplayInfo; stock: StockInfo }> {
   const products = await getCatalog();
   const pricing: PricingCatalog = Object.create(null) as PricingCatalog;
   const display: DisplayInfo = Object.create(null) as DisplayInfo;
+  const stock: StockInfo = Object.create(null) as StockInfo;
 
   for (const p of products) {
     pricing[p.id] = {
@@ -28,6 +31,7 @@ export async function getServerCatalog(): Promise<{ pricing: PricingCatalog; dis
       weighed: isWeighed(p),
     };
     display[p.id] = { name: p.name, unit: p.unit };
+    stock[p.id] = Number.isFinite(p.stock) ? p.stock : 0;
   }
-  return { pricing, display };
+  return { pricing, display, stock };
 }

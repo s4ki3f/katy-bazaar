@@ -208,3 +208,99 @@ export async function kvDelete(key: string): Promise<void> {
     }
   });
 }
+
+// ─────────────────────────────────────────────────────────────
+//  RESERVATION COUNTERS
+//
+//  Stock and slot capacity are the same problem: a counter that must not cross a ceiling, checked
+//  and incremented by many callers at once. Reading a count, deciding, and then writing is the lost
+//  update again — two shoppers both read "1 left" and both get it.
+//
+//  So the DECISION is computed in pure code (`planReservation`) and the ENFORCEMENT happens here,
+//  inside one Redis script. The script re-checks every ceiling against the value at execution time,
+//  which is what makes the earlier read safe to act on: if reality moved underneath the decision,
+//  nothing is written and the caller is told which entry blocked it.
+// ─────────────────────────────────────────────────────────────
+
+/** All-or-nothing: verify every ceiling first, then apply. Returns 0, or the 1-based blocked index. */
+const RESERVE = [
+  "for i = 1, #KEYS do",
+  "  local cur = tonumber(redis.call('GET', KEYS[i]) or '0')",
+  "  if cur + tonumber(ARGV[i*2-1]) > tonumber(ARGV[i*2]) then return i end",
+  "end",
+  "for i = 1, #KEYS do redis.call('INCRBY', KEYS[i], ARGV[i*2-1]) end",
+  "return 0",
+].join(" ");
+
+export type ReserveEntry = { key: string; delta: number; max: number };
+
+/**
+ * Apply every entry, or none.
+ *
+ * @returns `{ ok: true }`, or `{ ok: false, blockedKey }` naming the first ceiling that would have
+ * been crossed. A blocked result has written nothing.
+ */
+export async function kvReserve(entries: ReserveEntry[]): Promise<{ ok: true } | { ok: false; blockedKey: string }> {
+  if (entries.length === 0) return { ok: true };
+  if (kvConfigured) {
+    const args = entries.flatMap((e) => [String(e.delta), String(e.max)]);
+    const blocked = await upstash<number>(["EVAL", RESERVE, String(entries.length), ...entries.map((e) => e.key), ...args]);
+    const idx = Number(blocked ?? 0);
+    return idx === 0 ? { ok: true } : { ok: false, blockedKey: entries[idx - 1].key };
+  }
+  if (!kvIsFileBacked) throw new KvUnavailableError();
+  return serialised(async () => {
+    const counts: number[] = [];
+    for (const e of entries) counts.push(Number(await readJson<number>(`counter:${e.key}`, 0)) || 0);
+    for (let i = 0; i < entries.length; i++) {
+      if (counts[i] + entries[i].delta > entries[i].max) return { ok: false as const, blockedKey: entries[i].key };
+    }
+    for (let i = 0; i < entries.length; i++) await writeJsonAtomic(`counter:${entries[i].key}`, counts[i] + entries[i].delta);
+    return { ok: true as const };
+  });
+}
+
+/**
+ * Give counters back — an order was cancelled, or its goods have left the shop.
+ *
+ * Floors at zero rather than trusting the caller's arithmetic: a double release would otherwise
+ * drive the counter negative and silently manufacture stock that does not exist.
+ */
+const RELEASE = [
+  "for i = 1, #KEYS do",
+  "  local cur = tonumber(redis.call('GET', KEYS[i]) or '0')",
+  "  local next = cur - tonumber(ARGV[i])",
+  "  if next < 0 then next = 0 end",
+  "  redis.call('SET', KEYS[i], next)",
+  "end",
+  "return 1",
+].join(" ");
+
+export async function kvRelease(entries: { key: string; delta: number }[]): Promise<void> {
+  if (entries.length === 0) return;
+  if (kvConfigured) {
+    await upstash(["EVAL", RELEASE, String(entries.length), ...entries.map((e) => e.key), ...entries.map((e) => String(e.delta))]);
+    return;
+  }
+  if (!kvIsFileBacked) return;
+  await serialised(async () => {
+    for (const e of entries) {
+      const cur = Number(await readJson<number>(`counter:${e.key}`, 0)) || 0;
+      await writeJsonAtomic(`counter:${e.key}`, Math.max(0, cur - e.delta));
+    }
+  });
+}
+
+/** Current values for a set of counter keys, for showing real remaining capacity. */
+export async function kvCounters(keys: string[]): Promise<Record<string, number>> {
+  const out: Record<string, number> = Object.create(null);
+  if (keys.length === 0) return out;
+  if (kvConfigured) {
+    const raw = (await upstash<(string | null)[]>(["MGET", ...keys])) ?? [];
+    keys.forEach((k, i) => { out[k] = Number(raw[i] ?? 0) || 0; });
+    return out;
+  }
+  if (!kvIsFileBacked) { keys.forEach((k) => { out[k] = 0; }); return out; }
+  for (const k of keys) out[k] = Number(await readJson<number>(`counter:${k}`, 0)) || 0;
+  return out;
+}

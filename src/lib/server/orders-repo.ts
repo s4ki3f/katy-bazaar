@@ -9,6 +9,7 @@ import {
   kvDelete,
 } from "./kv";
 import { makeReference, parseReference } from "@/domain";
+import { releaseForOrder } from "./availability";
 import { randomInt } from "node:crypto";
 
 /**
@@ -171,12 +172,24 @@ export async function updateOrder(
   await ensureMigrated();
   const existing = await kvGet<StoredOrder>(orderKey(reference));
   if (!existing) return null;
+  // Releasing on the way OUT of an open state, exactly once. A cancelled order must hand its stock
+  // and slot back or they stay held by something nobody will collect; a collected one has physically
+  // left the shop, so holding a reservation for it would shrink availability forever.
+  const CLOSED = new Set(["cancelled", "collected"]);
+  const wasOpen = !CLOSED.has(String(existing.status ?? ""));
+  const nowClosed = CLOSED.has(String(next.status ?? ""));
+  if (wasOpen && nowClosed && Array.isArray(existing.reservation)) {
+    await releaseForOrder(existing.reservation as { key: string; delta: number }[]);
+  }
+
   const merged: StoredOrder = {
     ...next,
     reference,
     // Fields the server owns; a staff client cannot rewrite when the order arrived or what it costs.
     placedAt: existing.placedAt,
     receivedAt: existing.receivedAt,
+    // Server-owned: a staff client must not rewrite what this order claimed.
+    reservation: existing.reservation,
     updatedAt: new Date().toISOString(),
   };
   await kvSet(orderKey(reference), merged);

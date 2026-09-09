@@ -17,6 +17,8 @@ import { orderTotals as _orderTotals } from "./order/totals.js";
 import { validateOrderPayload as _validateOrderPayload } from "./order/validate.js";
 import { authorizeInventoryChange as _authorizeInventoryChange } from "./admin/inventoryAuthz.js";
 import { validateInventoryState as _validateInventoryState } from "./admin/inventoryValidate.js";
+import { slotsForDay as _slotsForDay, slotId as _slotId, SLOT_MINUTES as _SLOT_MINUTES } from "./availability/slots.js";
+import { planReservation as _planReservation } from "./availability/reservation.js";
 
 export type TaxClass = "taxable" | "exempt";
 
@@ -151,3 +153,39 @@ export const authorizeInventoryChange = _authorizeInventoryChange as unknown as 
   current: InventoryState,
   next: InventoryState,
 ) => AuthorizeResult;
+
+export type Slot = { id: string; startMinutes: number; endMinutes: number };
+
+/**
+ * One day's pickup slots from the store's opening hours. Clock-free and timezone-free by design:
+ * the caller decides what "today in Katy" means, because the previous version read the VIEWER's
+ * timezone and offered hours the shop is not open.
+ */
+export const slotsForDay: (dateISO: string, weekday: number, earliestMinutes: number) => Slot[] = _slotsForDay;
+export const slotId: (dateISO: string, minutes: number) => string = _slotId;
+export const SLOT_MINUTES: number = _SLOT_MINUTES;
+
+export type ReserveEntry = { key: string; delta: number; max: number };
+export type ReservationRequest = {
+  lines: { productId: string; qty: number }[];
+  onHand: Record<string, number>;
+  reserved: Record<string, number>;
+  slotId: string;
+  slotBooked: number;
+  slotCapacity: number;
+};
+export type ReservationError =
+  | { code: "slot_full"; slotId: string }
+  | { code: "insufficient_stock"; index: number; productId: string; requested: number; available: number };
+export type ReservationPlan =
+  | { ok: true; entries: ReserveEntry[] }
+  | { ok: false; errors: ReservationError[] };
+
+/**
+ * Decide whether an order fits remaining stock and slot capacity, and name the counters to move.
+ *
+ * It only DECIDES — the returned entries are applied by `kvReserve`, which re-checks every ceiling
+ * inside one atomic script. A decision computed from a read is stale the moment it is made; that
+ * re-check is what makes acting on it safe.
+ */
+export const planReservation = _planReservation as unknown as (req: ReservationRequest) => ReservationPlan;

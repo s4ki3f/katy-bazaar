@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { useCart } from "@/context/CartContext";
@@ -8,7 +8,25 @@ import { site, contactIsPlaceholder } from "@/lib/site.config";
 import { money } from "@/lib/format";
 import { computeTax } from "@/lib/tax";
 import { isWeighed } from "@/lib/products";
-import { getPickupSlots } from "@/lib/slots";
+type ApiSlot = { id: string; dateISO: string; startMinutes: number; endMinutes: number; remaining: number };
+type Slot = ApiSlot & { dayLabel: string; timeLabel: string };
+
+/** Label a server slot for display. The id stays canonical; only the words are cosmetic. */
+function toSlot(s: ApiSlot): Slot {
+  const fmt = (mins: number) => {
+    const h24 = Math.floor(mins / 60), m = mins % 60;
+    const ap = h24 >= 12 ? "PM" : "AM";
+    const h = h24 % 12 || 12;
+    return m ? `${h}:${String(m).padStart(2, "0")} ${ap}` : `${h}:00 ${ap}`;
+  };
+  const [y, mo, d] = s.dateISO.split("-").map(Number);
+  const day = new Date(Date.UTC(y, mo - 1, d));
+  return {
+    ...s,
+    dayLabel: new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric" }).format(day),
+    timeLabel: `${fmt(s.startMinutes)} – ${fmt(s.endMinutes)}`,
+  };
+}
 import { submitOrder, orderReference, type Order } from "@/lib/order";
 import { toCents } from "@/domain";
 import { CheckIcon, ArrowIcon, PinIcon } from "@/components/icons";
@@ -25,8 +43,24 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // slots are time-dependent, so compute once per mount (never during render on the server)
-  const slots = useMemo(() => getPickupSlots(), []);
+  // Slots come from the SERVER now. They used to be generated here from the viewer's clock and
+  // timezone with a hashed "remaining" — so a shopper outside Central time was offered hours the
+  // shop is not open, and "3 left" was the same fiction for everybody. The server knows the store's
+  // timezone and the real booking counts.
+  const [slots, setSlots] = useState<Slot[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(true);
+  useEffect(() => {
+    let live = true;
+    fetch("/api/slots", { headers: { Accept: "application/json" } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { slots?: ApiSlot[] } | null) => {
+        if (!live) return;
+        setSlots((d?.slots ?? []).map(toSlot));
+        setSlotsLoading(false);
+      })
+      .catch(() => { if (live) setSlotsLoading(false); });
+    return () => { live = false; };
+  }, []);
   const chosenSlot = slots.find((s) => s.id === slotId);
 
   if (!ready) return <div className="mx-auto max-w-3xl px-6 py-24 text-center text-muted-foreground">Loading…</div>;
@@ -200,6 +234,14 @@ export default function CheckoutPage() {
                 buttons that each report their own state.
               */}
               <div role="group" aria-labelledby="pickup-time-label" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {slotsLoading && (
+                  <p className="col-span-full text-sm text-muted-foreground">Checking pickup times…</p>
+                )}
+                {!slotsLoading && slots.length === 0 && (
+                  <p className="col-span-full text-sm text-muted-foreground">
+                    No pickup times are available right now. Please call the shop to arrange a time.
+                  </p>
+                )}
                 {slots.slice(0, 9).map((s) => {
                   const full = s.remaining === 0;
                   return (
