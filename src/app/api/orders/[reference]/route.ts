@@ -1,13 +1,19 @@
-import { kvGet, kvSet, kvAvailable, KvUnavailableError } from "@/lib/server/kv";
+import { kvAvailable, KvUnavailableError } from "@/lib/server/kv";
+import { getOrder, updateOrder } from "@/lib/server/orders-repo";
 import { roleFromRequest } from "@/lib/server/session";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
-const KEY = "orders";
 type StoredOrder = { reference: string; [k: string]: unknown };
 
-/** Staff update an order as they pick it. Requires a session. */
+/**
+ * Staff update an order as they pick it. Requires a session.
+ *
+ * This used to load every order, map over the whole array and write all of them back, so a save
+ * here erased any order that arrived between the read and the write — a customer's order vanishing
+ * because a staff member happened to press a button. It now writes ONE key: the order named in the
+ * path. Nothing else is touched, so there is nothing else to lose.
+ */
 export async function PUT(request: Request, ctx: { params: Promise<{ reference: string }> }) {
   if (!kvAvailable) {
     return Response.json({ error: new KvUnavailableError().message }, { status: 503 });
@@ -17,24 +23,35 @@ export async function PUT(request: Request, ctx: { params: Promise<{ reference: 
   }
 
   const { reference } = await ctx.params;
-  let incoming: StoredOrder;
+  const decoded = decodeURIComponent(reference);
+
+  let incoming: unknown;
   try {
-    incoming = (await request.json()) as StoredOrder;
+    incoming = await request.json();
   } catch {
     return Response.json({ error: "Malformed order." }, { status: 400 });
   }
-
-  const orders = (await kvGet<StoredOrder[]>(KEY)) ?? [];
-  const decoded = decodeURIComponent(reference);
-  if (!orders.some((o) => o.reference === decoded)) {
-    return Response.json({ error: "No such order." }, { status: 404 });
+  // A body of `null` used to spread into `{}` and replace the order with an empty object that kept
+  // only its reference — a silent deletion dressed as an update.
+  if (incoming === null || typeof incoming !== "object" || Array.isArray(incoming)) {
+    return Response.json({ error: "Order update must be an object." }, { status: 400 });
   }
 
-  await kvSet(
-    KEY,
-    orders.map((o) =>
-      o.reference === decoded ? { ...incoming, reference: decoded, updatedAt: new Date().toISOString() } : o,
-    ),
-  );
+  const updated = await updateOrder(decoded, incoming as StoredOrder);
+  if (!updated) return Response.json({ error: "No such order." }, { status: 404 });
   return Response.json({ ok: true });
+}
+
+/** Read one order. Requires a session — it carries a customer's name and phone number. */
+export async function GET(request: Request, ctx: { params: Promise<{ reference: string }> }) {
+  if (!kvAvailable) {
+    return Response.json({ error: new KvUnavailableError().message }, { status: 503 });
+  }
+  if (!roleFromRequest(request)) {
+    return Response.json({ error: "Not authorised." }, { status: 401 });
+  }
+  const { reference } = await ctx.params;
+  const order = await getOrder(decodeURIComponent(reference));
+  if (!order) return Response.json({ error: "No such order." }, { status: 404 });
+  return Response.json(order);
 }

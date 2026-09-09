@@ -138,10 +138,18 @@ function Counter() {
   async function seedDemo() {
     const s = new LocalOrderStore();
     const stamp = Date.now();
+    // The demo order needs the same canonical slot id a real one now carries. Derived from today so
+    // the label and the id agree — the whole point of the id is that "Today, 2:00 PM" stops meaning
+    // anything tomorrow, and a seed that contradicted itself would teach the counter staff the wrong
+    // shape. Format matches `isoLocal` in src/lib/slots.ts.
+    const d = new Date(stamp);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const demoSlotId = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T14:00`;
     await s.accept({
       reference: "KB-482 193",
       placedAt: new Date(stamp).toISOString(),
       customer: { name: "Ayesha R.", phone: "(281) 555-0101", email: "ayesha@example.com" },
+      pickupSlotId: demoSlotId,
       pickupSlot: "Today, 2:00 PM – 3:00 PM",
       notes: "Please keep the bones separate — for yakhni.",
       lines: [

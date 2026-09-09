@@ -31,6 +31,13 @@ export type Order = {
   reference: string;
   placedAt: string;
   customer: { name: string; phone: string; email: string };
+  /**
+   * Canonical, date-bearing slot id ("2026-09-11T14:30") — the only pickup field the server trusts.
+   * `pickupSlot` below is a display label and is deliberately NOT authoritative: it was previously
+   * the ONLY thing stored, and a relative label ("Today, 3:00 PM") stops identifying a real slot the
+   * next morning, so the shop could not tell which day an order was for.
+   */
+  pickupSlotId: string;
   pickupSlot: string;
   notes?: string;
   lines: OrderLine[];
@@ -38,11 +45,31 @@ export type Order = {
   tax: number;
   total: number;
   hasWeighedItems: boolean;
+  /**
+   * The total this client actually showed the customer, in integer cents.
+   *
+   * The server prices from the LIVE catalog and the storefront prices from the compiled one, so a
+   * price edited mid-visit makes them disagree. Sending the quote lets the server REFUSE rather
+   * than silently store a total the customer was never shown and only meets at the counter.
+   */
+  quotedTotalCents?: number;
 };
 
 export type SubmitResult =
-  | { ok: true; via: "endpoint" | "whatsapp" }
-  | { ok: false; via: "unconfigured" | "error"; message: string };
+  /**
+   * `reference` is the one the SERVER minted, and it is the only one the customer may be shown.
+   * The browser no longer invents it: the old client-side reference was the last six digits of
+   * Date.now(), which repeats every 16m40s, and the API answered the repeat with 200 {ok:true}
+   * while storing nothing — so checkout showed a success for an order that did not exist.
+   */
+  | { ok: true; via: "endpoint" | "whatsapp"; reference?: string }
+  | {
+      ok: false;
+      via: "unconfigured" | "error";
+      message: string;
+      /** Per-line codes from a 409, so the UI can name the items instead of saying "some items". */
+      errors?: { code: string; index?: number; productId?: string }[];
+    };
 
 /**
  * Short, human-readable pickup ID. The customer reads it out at the
@@ -101,8 +128,21 @@ export async function submitOrder(order: Order): Promise<SubmitResult> {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(order),
       });
-      if (!res.ok) return { ok: false, via: "error", message: `Order service returned ${res.status}.` };
-      return { ok: true, via: "endpoint" };
+      const payload = (await res.json().catch(() => null)) as
+        | {
+            ok?: boolean;
+            reference?: string;
+            error?: string;
+            errors?: { code: string; index?: number; productId?: string }[];
+          }
+        | null;
+      if (!res.ok) {
+        // The server states WHY in `error`; surfacing its own words beats a bare status code,
+        // and a 409 in particular means the basket no longer matches the live catalog.
+        const detail = payload?.error ?? `Order service returned ${res.status}.`;
+        return { ok: false, via: "error", message: detail, errors: payload?.errors };
+      }
+      return { ok: true, via: "endpoint", reference: payload?.reference };
     } catch {
       return { ok: false, via: "error", message: "Could not reach the order service." };
     }

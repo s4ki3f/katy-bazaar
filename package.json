@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "dev:counter": "NEXT_PUBLIC_ENABLE_ADMIN=true next dev",
-    "build:counter": "NEXT_PUBLIC_ENABLE_ADMIN=true next build"
+    "build:counter": "NEXT_PUBLIC_ENABLE_ADMIN=true next build",
+    "test": "node --test \"src/domain/**/*.test.js\""
   },
   "dependencies": {
     "motion": "^13.2.0",

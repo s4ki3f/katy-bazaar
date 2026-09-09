@@ -10,6 +10,7 @@ import { computeTax } from "@/lib/tax";
 import { isWeighed } from "@/lib/products";
 import { getPickupSlots } from "@/lib/slots";
 import { submitOrder, orderReference, type Order } from "@/lib/order";
+import { toCents } from "@/domain";
 import { CheckIcon, ArrowIcon, PinIcon } from "@/components/icons";
 
 /** Money leaves the browser as cents-accurate numbers, never 47.459999999999994. */
@@ -87,6 +88,18 @@ export default function CheckoutPage() {
     setSubmitError(null);
 
     const form = new FormData(e.currentTarget);
+
+    // A pickup order with no pickup time is not actionable at the counter, and the server now
+    // requires the canonical slot id rather than a label, so refuse here with a readable message
+    // instead of letting the request come back a 400.
+    if (!chosenSlot) {
+      setSubmitError("Please choose a pickup time.");
+      return;
+    }
+
+    // Only the WhatsApp fallback uses this: with no order endpoint there is no server to mint a
+    // reference. On the API path the SERVER's reference wins (see below) — the browser's guess is
+    // ignored, because a client-generated reference is what silently dropped orders before.
     const reference = orderReference();
 
     const order: Order = {
@@ -97,7 +110,8 @@ export default function CheckoutPage() {
         phone: String(form.get("phone") ?? ""),
         email: String(form.get("email") ?? ""),
       },
-      pickupSlot: chosenSlot ? `${chosenSlot.dayLabel}, ${chosenSlot.timeLabel}` : "No preference",
+      pickupSlotId: chosenSlot.id,
+      pickupSlot: `${chosenSlot.dayLabel}, ${chosenSlot.timeLabel}`,
       notes: String(form.get("notes") ?? "") || undefined,
       lines: lines.map((l) => ({
         productId: l.product.id,
@@ -114,17 +128,33 @@ export default function CheckoutPage() {
       hasWeighedItems: anyWeighed,
     };
 
+    // What this page actually put on the button. The server prices from the LIVE catalog and this
+    // page prices from the compiled one, so if the shop changed a price mid-visit the two disagree —
+    // and the server refuses rather than charging a total the shopper never saw.
+    const quotedTotalCents = toCents(total);
+
     setSubmitting(true);
-    const result = await submitOrder(order);
+    const result = await submitOrder({ ...order, quotedTotalCents });
     setSubmitting(false);
 
     if (!result.ok) {
-      setSubmitError(result.message);
+      // Name the offending items. "Some items are no longer available" over a cart whose lines all
+      // still look fine leaves the shopper no way to find the bad one but to empty the cart.
+      const named = (result.errors ?? [])
+        .filter((e) => e.code === "unknown_product" || e.code === "qty_not_integer" || e.code === "qty_invalid")
+        .map((e) => (typeof e.index === "number" ? lines[e.index]?.product.name : undefined))
+        .filter((n): n is string => Boolean(n));
+      setSubmitError(
+        named.length
+          ? `${named.join(", ")} ${named.length > 1 ? "are" : "is"} no longer available as ordered. Please remove ${named.length > 1 ? "them" : "it"} and try again.`
+          : result.message,
+      );
       return;
     }
 
     clear();
-    setPlaced(reference);
+    // The server's reference is authoritative; fall back to the local one only on the WhatsApp path.
+    setPlaced(result.reference ?? reference);
     window.scrollTo({ top: 0 });
   }
 
