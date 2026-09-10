@@ -1,4 +1,4 @@
-import { kvGet, kvSet, kvAvailable, KvUnavailableError } from "@/lib/server/kv";
+import { getInventory, setInventory, dbAvailable as kvAvailable, DbUnavailableError as KvUnavailableError } from "@/lib/server/db";
 import { requireRole } from "@/lib/server/session";
 import { validateInventoryState, authorizeInventoryChange } from "@/domain";
 
@@ -14,7 +14,7 @@ const EMPTY = { patches: {}, added: [], hidden: [] };
  */
 export async function GET() {
   if (!kvAvailable) return Response.json(EMPTY);
-  return Response.json((await kvGet(KEY)) ?? EMPTY);
+  return Response.json((await getInventory()) ?? EMPTY);
 }
 
 /**
@@ -61,7 +61,7 @@ export async function PUT(request: Request) {
   }
 
   try {
-    const current = (await kvGet<typeof EMPTY>(KEY)) ?? EMPTY;
+    const current = (await getInventory<typeof EMPTY>()) ?? EMPTY;
     const allowed = authorizeInventoryChange(auth.role, current, validated.value);
     if (!allowed.ok) {
       return Response.json(
@@ -72,7 +72,7 @@ export async function PUT(request: Request) {
         { status: 403 },
       );
     }
-    await kvSet(KEY, validated.value);
+    await setInventory(validated.value);
     return Response.json({ ok: true });
   } catch (e) {
     if (e instanceof KvUnavailableError) {

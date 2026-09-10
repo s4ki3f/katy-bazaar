@@ -1,5 +1,5 @@
 import "server-only";
-import { kvCounters, kvReserve, kvRelease, type ReserveEntry } from "./kv";
+import { counters as dbCounters, reserveAll, releaseAll, type ReserveEntry } from "./db";
 import { slotsForDay, planReservation, type ReservationPlan } from "@/domain";
 
 /**
@@ -75,7 +75,7 @@ export async function offeredSlots(at: Date = new Date()): Promise<OfferedSlot[]
     }
   }
 
-  const booked = await kvCounters(out.map((s) => `slot:${s.id}`));
+  const booked = await dbCounters(out.map((s) => `slot:${s.id}`));
   return out.map((s) => ({
     ...s,
     remaining: Math.max(0, SLOT_CAPACITY - (booked[`slot:${s.id}`] ?? 0)),
@@ -103,7 +103,7 @@ export async function reserveForOrder(args: {
   slotId: string;
 }): Promise<{ ok: true; entries: ReserveEntry[] } | { ok: false; plan?: ReservationPlan; blockedKey?: string }> {
   const productKeys = args.lines.map((l) => `reserve:${l.productId}`);
-  const counters = await kvCounters([`slot:${args.slotId}`, ...productKeys]);
+  const counters = await dbCounters([`slot:${args.slotId}`, ...productKeys]);
 
   const reserved: Record<string, number> = Object.create(null);
   for (const line of args.lines) reserved[line.productId] = (counters[`reserve:${line.productId}`] ?? 0) / 100;
@@ -118,12 +118,12 @@ export async function reserveForOrder(args: {
   });
   if (!plan.ok) return { ok: false, plan };
 
-  const applied = await kvReserve(plan.entries);
+  const applied = await reserveAll(plan.entries);
   if (!applied.ok) return { ok: false, blockedKey: applied.blockedKey };
   return { ok: true, entries: plan.entries };
 }
 
 /** Hand a basket's stock and slot back — the order was cancelled, or its goods have left. */
 export async function releaseForOrder(entries: { key: string; delta: number }[]): Promise<void> {
-  await kvRelease(entries);
+  await releaseAll(entries);
 }

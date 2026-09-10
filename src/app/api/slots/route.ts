@@ -1,4 +1,4 @@
-import { kvAvailable } from "@/lib/server/kv";
+import { dbAvailable as kvAvailable } from "@/lib/server/db";
 import { offeredSlots, SLOT_CAPACITY, STORE_TIME_ZONE } from "@/lib/server/availability";
 
 export const runtime = "nodejs";
